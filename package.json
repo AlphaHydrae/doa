@@ -22,7 +22,7 @@
     "js-yaml": "~2",
     "jsonschema": "~0.4",
     "log4js": "~0.6",
-    "stylus": "~0.34",
+    "stylus": "~0.37",
     "time": "~0.9",
     "underscore": "~1"
   },
