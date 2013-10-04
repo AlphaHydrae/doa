@@ -6,7 +6,7 @@ block body
       a(href = '/') {{'title'|t}}
     .container
       .row-fluid
-        .span8.offset2
+        .col-md-8.col-md-offset-2
           #watches(ng-controller = 'WatchesController')
             p.info(ng-class = 'countWatches()|watchClimateClass')
               strong {{watchClimateText()}}

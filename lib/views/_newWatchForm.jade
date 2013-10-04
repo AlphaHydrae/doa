@@ -1,4 +1,6 @@
 form.form-inline.new(ng-submit = 'addWatch()')
-  input.input-large(ng-model = 'newName', type = 'text', placeholder = '{{"watch.namePlaceholder"|t}}')
-  select.input-small(ng-model = 'newInterval', ng-options = 'i.value as "watch.interval." + i.name|t for i in watchIntervals')
+  .form-group
+    input.form-control.newName(ng-model = 'newName', type = 'text', placeholder = '{{"watch.namePlaceholder"|t}}')
+  .form-group
+    select.form-control(ng-model = 'newInterval', ng-options = 'i.value as "watch.interval." + i.name|t for i in watchIntervals')
   button.submit.btn.btn-primary(type = 'submit', ng-disabled = '!newName.trim().length') {{'watch.save'|t}}
