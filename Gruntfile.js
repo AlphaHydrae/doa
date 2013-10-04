@@ -36,13 +36,17 @@ module.exports = function(grunt) {
       browser: {
         files: [ 'lib/assets/js/**/*.js', 'lib/assets/js/**/*.coffee', 'spec/browser/**/*.js' ],
         tasks: [ 'karma:ci' ],
-        atBegin: true
+        options: {
+          atBegin: true
+        }
       },
 
       server: {
         files: [ 'lib/**/*.js', '!lib/assets/**', 'spec/server/**/*.js' ],
         tasks: [ 'jasmine_node' ],
-        atBegin: true
+        options: {
+          atBegin: true
+        }
       }
     }
   });
