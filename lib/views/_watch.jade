@@ -14,7 +14,8 @@
       input.name.form-control(type = 'text', ng-model = 'watch.name')
     .form-group
       select.interval.form-control(ng-model = 'watch.interval', ng-options = 'i.value as "watch.interval." + i.name|t for i in watchIntervals')
-.details(collapse = '!ui.detailed')
+//- FIXME: use collapse='!ui.detailed' once ui-bootstrap is compatible with bootstrap 3
+.details(ng-show = 'ui.detailed')
   p.url
     code http://localhost:3000/{{watch.token}}
   p.lastPingedAt {{lastPingedAt()}}
