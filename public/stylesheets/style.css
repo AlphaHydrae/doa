@@ -4,3 +4,17 @@ a {
 .jumbotron {
   text-align: center;
 }
+#newWatch {
+  margin-bottom: 1em;
+  text-align: center;
+}
+#newWatch .form-group {
+  margin-right: 0.8em;
+}
+#newWatch .watchName input {
+  width: 20em;
+}
+.watch .form-inline input,
+.watch .form-inline select {
+  width: 100%;
+}
