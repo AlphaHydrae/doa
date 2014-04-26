@@ -6,14 +6,28 @@ a
 
 #newWatch
   margin-bottom 1em
-  text-align center
-  .form-group
-    margin-right 0.8em
-  .watchName
-    input
-      width 20em
+  .alert
+    margin-top 1em
+  form
+    text-align center
+    .form-group
+      margin-right 0.8em
+    .watchName
+      input
+        width 20em
 
 .watch
   .form-inline
     input, select
       width 100%
+
+.serverErrors
+  -webkit-transition 0.5s linear all
+  transition 0.5s linear all
+  opacity 1
+
+.serverErrors.ng-hide
+  opacity 0
+
+.serverErrors.ng-hide-add, .serverErrors.ng-hide-remove
+  display block!important

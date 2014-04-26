@@ -3,25 +3,19 @@ extends layout
 block content
   .row
     .col-sm-8.col-xs-12
-      form#newWatch.form-inline(role='form')
-        .form-group.watchName
-          label.sr-only(for='newWatchName') Name
-          input.form-control(type='text', id='newWatchName', placeholder='Add something to watch')
-        .form-group
-          label.sr-only(for='newWatchInterval') Interval
-          select.form-control(id='newWatchInterval')
-            option Hourly
-            option(selected=true) Daily
-            option Weekly
-            option Monthly
-        button.btn.btn-primary(type='submit') Save
-      .list-group.watch
-        a.list-group-item.list-group-item-success(href='#')
-          strong foo
-        a.list-group-item.list-group-item-info(href='#')
-          strong bar
-        a.list-group-item.list-group-item-danger(href='#')
-          | baz
+      #newWatch(ng-controller='WatchFormController')
+        form.form-inline(ng-submit='create()', role='form')
+          .form-group.watchName
+            label.sr-only(for='newWatchName') Name
+            input.form-control(ng-model='newWatch.name', type='text', id='newWatchName', placeholder='Add something to watch', required=true)
+          .form-group
+            label.sr-only(for='newWatchInterval') Interval
+            select.form-control(ng-model='newWatch.interval', ng-options='interval|intervalName for interval in defaultIntervals', id='newWatchInterval', required=true)
+          button.btn.btn-primary(type='submit', ng-disabled='blank') Save
+        doa-server-errors.serverErrors(ng-show='serverErrors')
+      .list-group.watch(ng-controller='WatchesController')
+        a.list-group-item(ng-repeat='watch in watches', ng-controller='WatchController', ng-class='[statusClass]', href='#')
+          h4 {{ watch.name }}
         a.active.list-group-item.list-group-item-warning(href='#')
           .row
             form.form-inline(role='form')

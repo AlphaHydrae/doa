@@ -1,13 +1,17 @@
 doctype html
-html
+html(ng-app='doa')
   head
     title= title
     link(rel='stylesheet', href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css')
     link(rel='stylesheet', href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css')
     link(rel='stylesheet', href='/stylesheets/style.css')
+    script(src='//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js')
     script(src='//code.jquery.com/jquery-1.11.0.min.js')
     script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
     script(src='http://code.highcharts.com/highcharts.js')
+    script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js')
+    script(src='//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-animate.js')
+    script(src='/javascripts/angular.js')
     script(src='/javascripts/app.js')
   body
     .jumbotron
@@ -16,3 +20,10 @@ html
         p Yeehaw
     .container
       block content
+    script(type='text/ng-template', id='/serverErrorsTemplate.html')
+      .alert.alert-danger.alert-dismissable
+        button.close(type='button', data-dismiss='alert', aria-hidden='true') &times;
+        p
+          strong Oops...
+        ul
+          li(ng-repeat='error in serverErrors') {{ error.message }}

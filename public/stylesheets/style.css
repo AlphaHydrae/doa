@@ -6,15 +6,32 @@ a {
 }
 #newWatch {
   margin-bottom: 1em;
+}
+#newWatch .alert {
+  margin-top: 1em;
+}
+#newWatch form {
   text-align: center;
 }
-#newWatch .form-group {
+#newWatch form .form-group {
   margin-right: 0.8em;
 }
-#newWatch .watchName input {
+#newWatch form .watchName input {
   width: 20em;
 }
 .watch .form-inline input,
 .watch .form-inline select {
   width: 100%;
+}
+.serverErrors {
+  -webkit-transition: 0.5s linear all;
+  transition: 0.5s linear all;
+  opacity: 1;
+}
+.serverErrors.ng-hide {
+  opacity: 0;
+}
+.serverErrors.ng-hide-add,
+.serverErrors.ng-hide-remove {
+  display: block !important;
 }
