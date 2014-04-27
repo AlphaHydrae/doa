@@ -6,6 +6,12 @@ var client = redis.createClient(),
     random = require('../lib/random'),
     router = express.Router();
 
+function serializeWatch(watch) {
+  return _.extend(watch, {
+    url: 'http://localhost:3000/watches/' + watch.id
+  });
+}
+
 router.get('/', function(req, res) {
 
   client.lrange('doa:watches:list', 0, -1, function(err, list) {
@@ -16,7 +22,7 @@ router.get('/', function(req, res) {
     });
 
     multi.exec(function(err, watches) {
-      res.json(watches);
+      res.json(_.map(watches, serializeWatch));
     });
   });
 });
@@ -38,7 +44,24 @@ router.post('/', function(req, res) {
 
   client.lpush('doa:watches:list', watch.id, function(err) {
     client.hmset('doa:watch:' + watch.id, watch, function(err) {
-      res.json(watch);
+      res.json(serializeWatch(watch));
+    });
+  });
+});
+
+// TODO: expose only if configured
+router.delete('/', function(req, res) {
+
+  client.lrange('doa:watches:list', 0, -1, function(err, list) {
+
+    var multi = client.multi();
+    _.each(list, function(id) {
+      multi.del('doa:watch:' + id);
+      multi.lrem('doa:watches:list', 0, id);
+    });
+
+    multi.exec(function(err) {
+      res.send(204);
     });
   });
 });

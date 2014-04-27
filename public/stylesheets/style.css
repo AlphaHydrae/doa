@@ -13,15 +13,19 @@ a {
 #newWatch form {
   text-align: center;
 }
-#newWatch form .form-group {
-  margin-right: 0.8em;
-}
-#newWatch form .watchName input {
-  width: 20em;
+#newWatch form input,
+#newWatch form select,
+#newWatch form button {
+  width: 100%;
 }
 .watch .form-inline input,
 .watch .form-inline select {
   width: 100%;
+}
+.watch .url {
+  text-align: center;
+  font-family: Monospace;
+  cursor: pointer;
 }
 .serverErrors {
   -webkit-transition: 0.5s linear all;

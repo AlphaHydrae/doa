@@ -1,4 +1,8 @@
-var app = angular.module( "doa", [ 'ngAnimate' ]);
+var app = angular.module( "doa", [ 'ngAnimate', 'ngClipboard' ]);
+
+app.config([ 'ngClipProvider', function(ngClipProvider) {
+  ngClipProvider.setPath('/javascripts/vendor/ZeroClipboard.swf');
+} ]);
 
 app.run([ '$rootScope', function($rootScope) {
   $rootScope.defaultIntervals = [ 3600, 86400, 604800, 2592000 ];
@@ -51,12 +55,19 @@ app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scop
 
 app.controller('WatchController', [ '$scope', function($scope) {
 
-  $scope.statusClass = 'list-group-item-info';
+  $scope.statusClass = 'panel-info';
+  $scope.collapseClass = 'in';
   if ($scope.watch.status == 'up') {
-    $scope.statusClass = 'list-group-item-success';
+    $scope.statusClass = 'panel-success';
+    $scope.collapseClass = '';
   } else if ($scope.watch.status == 'down') {
-    $scope.statusClass = 'list-group-item-danger';
+    $scope.statusClass = 'panel-danger';
+    $scope.collapseClass = '';
   }
+
+  $scope.getWatchUrl = function() {
+    return $scope.watch.url;
+  };
 } ]);
 
 app.factory('WatchManager', [ '$rootScope', '$http', '$q', function($rootScope, $http, $q) {
