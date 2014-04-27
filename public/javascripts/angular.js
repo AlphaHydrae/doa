@@ -5,10 +5,15 @@ app.run([ '$rootScope', function($rootScope) {
 } ]);
 
 app.controller('WatchesController', [ '$scope', 'WatchManager', function($scope, $watchManager) {
-  $scope.watches = $watchManager.watches;
+
+  $watchManager.init();
+
+  $scope.$on('init', function(watches) {
+    $scope.watches = $watchManager.watches;
+  });
 } ]);
 
-app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scope, $watchManager) {
+app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scope, watchManager) {
 
   function reset() {
     clearErrors();
@@ -32,7 +37,7 @@ app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scop
 
   $scope.create = function() {
     clearErrors();
-    $watchManager.create($scope.newWatch).then(function() {
+    watchManager.create($scope.newWatch).then(function() {
       reset();
     }, function(err) {
       $scope.serverErrors = err;
@@ -54,23 +59,24 @@ app.controller('WatchController', [ '$scope', function($scope) {
   }
 } ]);
 
-app.factory('WatchManager', [ '$q', function($q) {
+app.factory('WatchManager', [ '$rootScope', '$http', '$q', function($rootScope, $http, $q) {
 
   var service = {
-    watches: [
-      { name: 'foo', status: 'up' },
-      { name: 'bar', status: 'new' },
-      { name: 'baz', status: 'down' }
-    ]
+    watches: []
+  };
+
+  service.init = function() {
+    return $http.get('/watches').then(function(res) {
+      service.watches = res.data;
+      $rootScope.$broadcast('init', service.watches);
+    });
   };
 
   service.create = function(watch) {
-    if (Math.random() > 0.5) {
-      service.watches.unshift(watch);
-      return $q.when(watch);
-    } else {
-      return $q.reject([ { message: 'Borked.' } ]);
-    }
+    return $http.post('/watches', watch, { 'Content-Type': 'application/json' }).then(function(res) {
+      service.watches.unshift(res.data);
+      return res.data;
+    });
   };
 
   return service;
