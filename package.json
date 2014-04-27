@@ -15,6 +15,7 @@
     "morgan": "~1.0.0",
     "redis": "^0.10.1",
     "redis-namespace": "^0.1.0",
+    "socket.io": "^0.9.16",
     "static-favicon": "~1.0.0",
     "stylus": "0.42.3",
     "underscore": "^1.6.0"

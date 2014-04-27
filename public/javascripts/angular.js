@@ -1,4 +1,4 @@
-var app = angular.module( "doa", [ 'ngAnimate', 'ngClipboard', 'ui.bootstrap' ]);
+var app = angular.module( "doa", [ 'ngAnimate', 'ngClipboard', 'ui.bootstrap', 'btford.socket-io' ]);
 
 app.config([ 'ngClipProvider', function(ngClipProvider) {
   ngClipProvider.setPath('/javascripts/vendor/ZeroClipboard.swf');
@@ -17,7 +17,7 @@ app.controller('WatchesController', [ '$scope', 'WatchManager', function($scope,
   });
 } ]);
 
-app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scope, watchManager) {
+app.controller('WatchFormController', [ '$scope', 'WatchManager', 'ServerSocket', function($scope, watchManager, serverSocket) {
 
   function reset() {
     clearErrors();
@@ -39,13 +39,17 @@ app.controller('WatchFormController', [ '$scope', 'WatchManager', function($scop
 
   reset();
 
+  serverSocket.forward([ 'created', 'create:error' ], $scope);
+
+  $scope.$on('socket:create:error', function(err) {
+    $scope.serverErrors = err;
+  });
+
+  $scope.$on('socket:created', reset);
+
   $scope.create = function() {
     clearErrors();
-    watchManager.create($scope.newWatch).then(function() {
-      reset();
-    }, function(err) {
-      $scope.serverErrors = err;
-    });
+    watchManager.create($scope.newWatch);
   };
 
   $scope.$watch('newWatch.name', function() {
@@ -70,27 +74,42 @@ app.controller('WatchController', [ '$scope', function($scope) {
   };
 } ]);
 
-app.factory('WatchManager', [ '$rootScope', '$http', '$q', function($rootScope, $http, $q) {
+app.factory('WatchManager', [ '$rootScope', '$q', 'ServerSocket', function($rootScope, $q, serverSocket) {
 
-  var service = {
-    watches: []
-  };
+  var socket,
+      service = {
+        watches: []
+      };
+
+  serverSocket.forward([ 'init', 'created' ]);
+
+  $rootScope.$on('socket:init', function (ev, data) {
+    service.watches = data.watches;
+    $rootScope.$broadcast('init', service.watches);
+  });
+
+  $rootScope.$on('socket:created', function(ev, data) {
+    service.watches.unshift(data);
+  });
 
   service.init = function() {
-    return $http.get('/watches').then(function(res) {
-      service.watches = res.data;
-      $rootScope.$broadcast('init', service.watches);
-    });
+    serverSocket.emit('init');
   };
 
   service.create = function(watch) {
-    return $http.post('/watches', watch, { 'Content-Type': 'application/json' }).then(function(res) {
-      service.watches.unshift(res.data);
-      return res.data;
-    });
+    serverSocket.emit('create', watch);
   };
 
   return service;
+} ]);
+
+app.factory('ServerSocket', [ 'socketFactory', function(socketFactory) {
+
+  var socket = socketFactory({
+    ioSocket: io.connect('http://localhost:3000')
+  });
+
+  return socket;
 } ]);
 
 app.directive('doaServerErrors', function() {
