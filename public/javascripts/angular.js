@@ -1,4 +1,4 @@
-var app = angular.module( "doa", [ 'ngAnimate', 'ngClipboard' ]);
+var app = angular.module( "doa", [ 'ngAnimate', 'ngClipboard', 'ui.bootstrap' ]);
 
 app.config([ 'ngClipProvider', function(ngClipProvider) {
   ngClipProvider.setPath('/javascripts/vendor/ZeroClipboard.swf');

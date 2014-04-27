@@ -28,24 +28,5 @@ block content
                     .input-group-btn
                       a.btn.btn-default(clip-copy='getWatchUrl()', type='button', href='#')
                         span.glyphicon.glyphicon-edit
-        a.active.list-group-item.list-group-item-warning(href='#')
-          .row
-            form.form-inline(role='form')
-              .form-group.col-xs-6
-                label.sr-only(for='watchName') Name
-                input.form-control(type='text', id='watchName', value='quz')
-              .form-group.col-xs-3
-                label.sr-only(for='watchInterval') Interval
-                select.form-control(id='watchInterval')
-                  option Hourly
-                  option(selected=true) Daily
-                  option Weekly
-                  option Monthly
-              .col-xs-3
-                .btn-group.pull-right
-                  button.btn.btn-default(type='button')
-                    span.glyphicon.glyphicon-edit
-                  button.btn.btn-default(type='button')
-                    span.glyphicon.glyphicon-trash
     .col-sm-4.col-xs-12
       #chart
