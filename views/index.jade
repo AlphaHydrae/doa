@@ -16,9 +16,28 @@ block content
         doa-server-errors.serverErrors(ng-show='serverErrors')
       #watches.panel-group(ng-controller='WatchesController')
         .watch.panel(ng-repeat='watch in watches', ng-controller='WatchController', ng-class='[statusClass]', href='#')
-          .panel-heading
-            h4.panel-title
-              a(data-toggle='collapse', href='#watch-{{ watch.id }}') {{ watch.name }}
+          .panel-heading.clearfix
+            div(ng-hide='editing')
+              h4.panel-title.pull-left
+                a(data-toggle='collapse', href='#watch-{{ watch.id }}') {{ watch.name }}
+              .btn-group.btn-group-sm.pull-right
+                button.btn.btn-default(ng-click='toggleEditing()')
+                  span.glyphicon.glyphicon-pencil
+            form.form-inline.clearfix(role='form', ng-submit='update()', ng-hide='!editing')
+              .form-group.col-xs-6
+                label.sr-only(for='watch-{{ watch.id }}-name') Name
+                input.form-control(ng-model='watchUpdate.name', type='text', id='watch-{{ watch.id }}-name', required=true)
+              .form-group.col-xs-3
+                label.sr-only(for='watch-{{ watch.id }}-interval') Interval
+                select.form-control(ng-model='watchUpdate.interval', ng-options='interval|intervalName for interval in defaultIntervals', id='watch-{{ watch.id }}-interval', required=true)
+              .controls.form-group.col-xs-3
+                .btn-group.btn-group-sm.pull-right
+                  button.btn.btn-default(type='button', ng-click='toggleEditing()')
+                    span.glyphicon.glyphicon-ban-circle
+                  button.btn.btn-danger(type='button', ng-click='destroy()')
+                    span.glyphicon.glyphicon-trash
+                  button.btn.btn-primary(type='submit', ng-disabled='blank')
+                    span.glyphicon.glyphicon-ok
           .panel-collapse.collapse(ng-class='[collapseClass]', id='watch-{{ watch.id }}')
             .panel-body
               form.form-inline(role='form')

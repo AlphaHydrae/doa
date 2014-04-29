@@ -18,9 +18,15 @@ a {
 #newWatch form button {
   width: 100%;
 }
+.watch .panel-heading a {
+  vertical-align: middle;
+}
 .watch .form-inline input,
 .watch .form-inline select {
   width: 100%;
+}
+.watch .form-inline .controls {
+  padding-right: 0;
 }
 .watch .url {
   text-align: center;
