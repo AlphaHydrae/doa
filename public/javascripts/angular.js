@@ -8,7 +8,7 @@ app.run([ '$rootScope', function($rootScope) {
   $rootScope.defaultIntervals = [ 3600, 86400, 604800, 2592000 ];
 } ]);
 
-app.controller('WatchesController', [ '$scope', '$interval', 'WatchManager', function($scope, $interval, $watchManager) {
+app.controller('WatchesController', [ '$rootScope', '$scope', '$interval', 'WatchManager', function($rootScope, $scope, $interval, $watchManager) {
 
   $watchManager.init();
 
@@ -18,7 +18,7 @@ app.controller('WatchesController', [ '$scope', '$interval', 'WatchManager', fun
 
   $interval(function() {
     console.log('Refreshing watches...');
-    $scope.$broadcast('refresh');
+    $rootScope.$broadcast('refresh');
   }, 5000);
 } ]);
 
@@ -81,17 +81,12 @@ app.controller('WatchController', [ '$scope', 'ServerSocket', 'WatchManager', fu
 
   function updateStatus() {
 
-    if (!$scope.watch.pingedAt) {
+    var status = watchManager.status($scope.watch);
+
+    if (status == 'new') {
       $scope.statusClass = 'panel-info';
       $scope.collapseClass = 'in';
-      return;
-    }
-
-    var pingedAt = moment($scope.watch.pingedAt).unix(),
-        interval = $scope.watch.interval,
-        now = moment().unix();
-
-    if (now <= pingedAt + interval) {
+    } else if (status == 'up') {
       $scope.statusClass = 'panel-success';
       $scope.collapseClass = '';
     } else {
@@ -183,6 +178,22 @@ app.factory('WatchManager', [ '$rootScope', '$q', 'ServerSocket', function($root
     serverSocket.emit('delete', id);
   };
 
+  service.status = function(watch) {
+    if (!watch.pingedAt) {
+      return 'new';
+    }
+
+    var pingedAt = moment(watch.pingedAt).unix(),
+        interval = watch.interval,
+        now = moment().unix();
+
+    if (now <= pingedAt + interval) {
+      return 'up';
+    } else {
+      return 'down';
+    }
+  };
+
   return service;
 } ]);
 
@@ -193,6 +204,60 @@ app.factory('ServerSocket', [ 'socketFactory', function(socketFactory) {
   });
 
   return socket;
+} ]);
+
+app.directive('doaStatus', [ '$rootScope', 'WatchManager', function($rootScope, watchManager) {
+  return {
+    restrict: 'E',
+    template: '',
+    link: function(scope, e, attr) {
+
+      var chart = new Highcharts.Chart({
+        chart: {
+          plotBackgroundColor: null,
+          plotBorderWidth: null,
+          plotShadow: false,
+          renderTo: e.find('.chart')[0]
+        },
+        colors: [ '#d0e9c6', '#c4e3f3', '#ebcccc' ],
+        title: false,
+        tooltip: {
+          pointFormat: '{series.name}: <b>{point.y}</b>'
+        },
+        plotOptions: {
+          pie: {
+            allowPointSelect: true, // TODO: filter displayed watches
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: false
+            }
+          }
+        },
+        series: [{
+          type: 'pie',
+          name: 'Count',
+          data: [
+          ]
+        }]
+      });
+
+      $rootScope.$on('refresh', function() {
+
+        var counts = _.reduce(watchManager.watches, function(memo, watch) {
+          memo[watchManager.status(watch)] += 1;
+          return memo;
+        }, { up: 0, down: 0, new: 0 });
+
+        var data = [
+          [ 'UP', counts.up ],
+          [ 'NEW', counts.new ],
+          [ 'DOWN', counts.down ]
+        ];
+
+        chart.series[0].setData(data);
+      });
+    }
+  };
 } ]);
 
 app.directive('doaWatchInterval', [ '$rootScope', '$timeout', function($rootScope, $timeout) {
