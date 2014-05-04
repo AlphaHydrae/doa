@@ -9,8 +9,7 @@ block content
             label.sr-only(for='newWatchName') Name
             input.form-control(ng-model='newWatch.name', type='text', id='newWatchName', placeholder='Add something to watch', required=true)
           .form-group.col-md-2.col-sm-3.col-xs-6
-            label.sr-only(for='newWatchInterval') Interval
-            select.form-control(ng-model='newWatch.interval', ng-options='interval|intervalName for interval in defaultIntervals', id='newWatchInterval', required=true)
+            doa-watch-interval(watch='newWatch')
           .form-group.col-md-2.col-sm-3.col-xs-6
             button.btn.btn-primary(type='submit', ng-disabled='blank') Save
         doa-server-errors.serverErrors(ng-show='serverErrors')
@@ -28,8 +27,7 @@ block content
                 label.sr-only(for='watch-{{ watch.id }}-name') Name
                 input.form-control(ng-model='watchUpdate.name', type='text', id='watch-{{ watch.id }}-name', required=true)
               .form-group.col-xs-3
-                label.sr-only(for='watch-{{ watch.id }}-interval') Interval
-                select.form-control(ng-model='watchUpdate.interval', ng-options='interval|intervalName for interval in defaultIntervals', id='watch-{{ watch.id }}-interval', required=true)
+                doa-watch-interval(watch='watchUpdate')
               .controls.form-group.col-xs-3
                 .btn-group.btn-group-sm.pull-right
                   button.btn.btn-default(type='button', ng-click='toggleEditing()')

@@ -8,13 +8,18 @@ app.run([ '$rootScope', function($rootScope) {
   $rootScope.defaultIntervals = [ 3600, 86400, 604800, 2592000 ];
 } ]);
 
-app.controller('WatchesController', [ '$scope', 'WatchManager', function($scope, $watchManager) {
+app.controller('WatchesController', [ '$scope', '$interval', 'WatchManager', function($scope, $interval, $watchManager) {
 
   $watchManager.init();
 
   $scope.$on('init', function(watches) {
     $scope.watches = $watchManager.watches;
   });
+
+  $interval(function() {
+    console.log('Refreshing watches...');
+    $scope.$broadcast('refresh');
+  }, 5000);
 } ]);
 
 app.controller('WatchFormController', [ '$scope', 'WatchManager', 'ServerSocket', function($scope, watchManager, serverSocket) {
@@ -75,20 +80,30 @@ app.controller('WatchController', [ '$scope', 'ServerSocket', 'WatchManager', fu
   });
 
   function updateStatus() {
-    $scope.statusClass = 'panel-info';
-    $scope.collapseClass = 'in';
-    if ($scope.watch.status == 'up') {
+
+    if (!$scope.watch.pingedAt) {
+      $scope.statusClass = 'panel-info';
+      $scope.collapseClass = 'in';
+      return;
+    }
+
+    var pingedAt = moment($scope.watch.pingedAt).unix(),
+        interval = $scope.watch.interval,
+        now = moment().unix();
+
+    if (now <= pingedAt + interval) {
       $scope.statusClass = 'panel-success';
       $scope.collapseClass = '';
-    } else if ($scope.watch.status == 'down') {
+    } else {
       $scope.statusClass = 'panel-danger';
       $scope.collapseClass = '';
     }
   }
 
   updateStatus();
-  $scope.$watch('watch.status', updateStatus);
-  
+  // TODO: replace by $watchGroup when angular 1.3.0 stable
+  $scope.$watchCollection('watch', updateStatus);
+  $scope.$on('refresh', updateStatus);
 
   $scope.getWatchUrl = function() {
     return $scope.watch.url;
@@ -124,24 +139,29 @@ app.factory('WatchManager', [ '$rootScope', '$q', 'ServerSocket', function($root
   serverSocket.forward([ 'init', 'created', 'updated', 'pinged', 'deleted' ]);
 
   $rootScope.$on('socket:init', function (ev, data) {
+    console.log('Watches initialized: ' + JSON.stringify(data));
     service.watches = data.watches;
     $rootScope.$broadcast('init', service.watches);
   });
 
   $rootScope.$on('socket:created', function(ev, data) {
+    console.log('Watch created: ' + JSON.stringify(data));
     service.watches.unshift(data);
   });
 
   $rootScope.$on('socket:updated', function(ev, data) {
+    console.log('Watch updated: ' + JSON.stringify(data));
     var watch = _.findWhere(service.watches, { id: data.id });
     _.extend(watch, data);
   });
 
   $rootScope.$on('socket:pinged', function(ev, data) {
+    console.log('Watch pinged: ' + JSON.stringify(data));
     _.extend(_.findWhere(service.watches, { id: data.id }), data);
   });
 
   $rootScope.$on('socket:deleted', function(ev, id) {
+    console.log('Watch deleted: ' + id);
     var watch = _.findWhere(service.watches, { id: id });
     service.watches.splice(_.indexOf(service.watches, watch), 1);
   });
@@ -175,6 +195,49 @@ app.factory('ServerSocket', [ 'socketFactory', function(socketFactory) {
   return socket;
 } ]);
 
+app.directive('doaWatchInterval', [ '$rootScope', '$timeout', function($rootScope, $timeout) {
+  return {
+    restrict: 'E',
+    scope: {
+      watch: '='
+    },
+    templateUrl: '/watchInterval.html',
+    link: function(scope, e, attr) {
+
+      var input = e.find('input'),
+          currentValue = scope.watch.interval;
+
+      scope.intervals = $rootScope.defaultIntervals;
+      scope.custom = !_.contains(scope.intervals, currentValue);
+
+      scope.$watch('watch.interval', function(value) {
+        if (!value) {
+          scope.custom = true;
+          scope.watch.interval = currentValue;
+        } else {
+          currentValue = value;
+        }
+      });
+
+      scope.$watch('custom', function(value) {
+        if (value) {
+          $timeout(function() {
+            input.select();
+          }, 500);
+        }
+      });
+
+      input.focusout(function() {
+        if (_.contains(scope.intervals, scope.watch.interval)) {
+          scope.$apply(function() {
+            scope.custom = false;
+          });
+        }
+      });
+    }
+  };
+} ]);
+
 app.directive('doaServerErrors', function() {
   return {
     restrict: 'E',
@@ -193,5 +256,11 @@ app.filter('intervalName', function() {
 
   return function(value) {
     return names[value];
+  };
+});
+
+app.filter('default', function() {
+  return function(value, defaultValue) {
+    return value !== undefined ? value : defaultValue;
   };
 });

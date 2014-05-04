@@ -16,6 +16,7 @@ html(ng-app='doa')
     script(src='/javascripts/vendor/ng-clip.min.js')
     script(src='/socket.io/socket.io.js')
     script(src='/javascripts/vendor/socket.min.js')
+    script(src='//cdnjs.cloudflare.com/ajax/libs/moment.js/2.6.0/moment.min.js')
     script(src='/javascripts/angular.js')
     script(src='/javascripts/app.js')
   body
@@ -25,6 +26,11 @@ html(ng-app='doa')
         p Yeehaw
     .container
       block content
+    script(type='text/ng-template', id='/watchInterval.html')
+      label.sr-only(for='watch-{{ watch.id | default:"new" }}-interval') Interval
+      select.form-control(ng-model='watch.interval', ng-options='interval|intervalName for interval in intervals', ng-show='!custom', id='watch-{{ watch.id | default:"new" }}-interval', required=true)
+        option(value='') Custom
+      input.form-control(ng-model='watch.interval', ng-show='custom', type='number', id='watch-{{ watch.id | default:"new" }}-interval', required=true)
     script(type='text/ng-template', id='/serverErrorsTemplate.html')
       .alert.alert-danger.alert-dismissable
         button.close(type='button', data-dismiss='alert', aria-hidden='true') &times;
