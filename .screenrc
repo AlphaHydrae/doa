@@ -1,9 +1,8 @@
 source $HOME/.screenrc
 
 screen -t srv 0
-stuff "nodemon -w lib bin/doa"
-screen -t vim 1 $EDITOR -c GG
+stuff "gulp dev"
+screen -t vim 1
+stuff "\${PROJECT_EDITOR-\$EDITOR}\012"
 screen -t zsh 2
-screen -t spec 3
-stuff "grunt watch"
 select vim

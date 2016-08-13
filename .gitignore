@@ -1,5 +1,8 @@
-*.swp
-*.log
-build
-node_modules
-tmp
+/*.swp
+/*.log
+/build
+/client/typings
+/dist
+/node_modules
+/public
+/tmp

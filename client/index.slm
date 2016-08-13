@@ -1,0 +1,19 @@
+doctype html
+html
+  head
+    title ...
+
+    meta name='viewport' content='width=device-width initial-scale=1'
+    base href='/'
+
+    /! inject:css
+    /! endinject
+  body
+    my-app
+      p Loading...
+
+    /! inject:js
+    /! endinject
+
+    - if this.liveReloadUrl
+      script src=this.liveReloadUrl
