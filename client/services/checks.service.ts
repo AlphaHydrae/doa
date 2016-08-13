@@ -6,17 +6,24 @@ import { Observable } from 'rxjs/Observable';
 @Injectable()
 export class ChecksService {
 
-  private _checks: BehaviorSubject<Object[]> = new BehaviorSubject([]);
-  public checks: Observable<Object[]> = this._checks.asObservable();
+  private checksSub: BehaviorSubject<Object[]> = new BehaviorSubject([]);
+  public checksObs: Observable<Object[]> = this.checksSub.asObservable();
 
   constructor(private http: Http) {
-    this.refreshChecks().subscribe(checks => {
-      this._checks.next(this._checks.getValue().concat(checks));
-    });
+    this.refreshChecks();
+  }
+
+  createCheck(data) {
   }
 
   refreshChecks() {
-    return this.http.get('/api/checks').map(this.extractData);
+
+    let obs = this.http.get('/api/checks').cache().map(this.extractData);
+    obs.subscribe(checks => {
+      this.checksSub.next(this.checksSub.getValue().concat(checks));
+    });
+
+    return obs;
   }
 
   private extractData(res) {

@@ -15,6 +15,10 @@
 .page-header
   h1 {{ title }}
 
+p
+  button.btn.btn-success on-click="createCheck()"
+    span.glyphicon.glyphicon-plus
+
 ul
-  li *ngFor="let check of checksService.checks | async"
+  li *ngFor="let check of checksService.checksObs | async"
     | {{ check.title }}
