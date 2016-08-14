@@ -55,6 +55,7 @@
     "gulp-uglify": "^2.0.0",
     "gulp-util": "^3.0.7",
     "gulp-watch": "^4.3.9",
+    "moment": "^2.14.1",
     "ng2-bootstrap": "^1.0.24",
     "nodemon": "^1.9.1",
     "reflect-metadata": "^0.1.3",

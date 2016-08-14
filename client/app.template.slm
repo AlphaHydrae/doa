@@ -16,8 +16,9 @@
   h1 {{ title }}
 
 p
-  button.btn.btn-success on-click="createCheck()"
+  button.btn.btn-success on-click='createCheckDialog.open()'
     span.glyphicon.glyphicon-plus
+  create-check-dialog ref-createCheckDialog=true
 
 ul
   li *ngFor="let check of checksService.checksObs | async"

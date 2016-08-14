@@ -1,1 +1,7 @@
-h2 Template
+.modal.fade bsModal=true ref-modal='bs-modal' tabindex='-1' role='dialog' aria-hidden='true'
+  .modal-dialog.modal-lg
+    .modal-content
+      .modal-header
+        h4.modal-title Modal title
+      .modal-body
+        p Modal body
