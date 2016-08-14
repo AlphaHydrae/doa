@@ -13,13 +13,27 @@ import { ChecksService } from '../../services/checks.service';
 })
 export class CreateCheckDialogComponent {
 
-  @ViewChild('modal')
+  @ViewChild(ModalDirective)
   public modal: ModalDirective;
 
+  public check: Object;
+
   public constructor(private checksService: ChecksService) {
+    this.check = {};
   }
 
   open() {
+    this.check = {};
     this.modal.show();
+  }
+
+  close() {
+    this.modal.hide();
+  }
+
+  save() {
+    this.checksService.createCheck(this.check).subscribe(check => {
+      this.close();
+    });
   }
 }

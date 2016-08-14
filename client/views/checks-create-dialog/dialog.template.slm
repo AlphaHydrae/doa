@@ -1,7 +1,14 @@
-.modal.fade bsModal=true ref-modal='bs-modal' tabindex='-1' role='dialog' aria-hidden='true'
-  .modal-dialog.modal-lg
+.modal.fade bsModal=true tabindex='-1' role='dialog' aria-hidden='true'
+  .modal-dialog
     .modal-content
       .modal-header
-        h4.modal-title Modal title
-      .modal-body
-        p Modal body
+        h4.modal-title Add a check
+      form
+        .modal-body
+          .form-group
+            label for='check-title' Title
+            input#check-title.form-control type='text' placeholder='What do you want to check?' bindon-ngModel='check.title' name='title'
+        .modal-footer
+          .btn-group.pull-right
+            button.btn.btn-default type='button' on-click='close()' Cancel
+            button.btn.btn-primary type='submit' on-click='save()' Save

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Http, Response } from '@angular/http';
+import { Headers, Http, RequestOptions, Response } from '@angular/http';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 
@@ -14,6 +14,20 @@ export class ChecksService {
   }
 
   createCheck(data) {
+
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let obs = this.http.post('/api/checks', JSON.stringify(data), options).cache().map(this.extractData);
+    obs.subscribe(check => {
+
+      var newChecks = this.checksSub.getValue().slice();
+      newChecks.push(check);
+
+      this.checksSub.next(newChecks);
+    });
+
+    return obs;
   }
 
   refreshChecks() {
@@ -27,7 +41,6 @@ export class ChecksService {
   }
 
   private extractData(res) {
-    let body = res.json();
-    return body || [];
+    return res.json();
   }
 }
