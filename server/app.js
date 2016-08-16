@@ -21,7 +21,9 @@ app.use(cookieParser());
 app.use(express.static(config.path('public')));
 app.use('/node_modules', express.static(config.path('node_modules')));
 
-app.use('/api/checks', require('./routes/checks'));
+app.use('/api', require('./api'));
+
+require('./db');
 
 var router = express.Router();
 

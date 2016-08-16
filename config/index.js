@@ -13,13 +13,16 @@ var config = {
   },
 
   development: {
+    db: process.env.DOA_MONGODB_URI || 'mongodb://localhost/doa',
     liveReloadUrl: process.env.LIVERELOAD_URL || 'http://localhost:' + liveReloadPort + '/livereload.js'
   },
 
   test: {
+    db: process.env.DOA_MONGODB_URI || 'mongodb://localhost/doa-test',
   },
 
   production: {
+    db: process.env.DOA_MONGODB_URI
   }
 };
 
