@@ -21,10 +21,10 @@ export class ChecksService {
     let obs = this.http.post('/api/checks', JSON.stringify(data), options).cache().map(this.extractData);
     obs.subscribe(check => {
 
-      var newChecks = this.checksSub.getValue().slice();
-      newChecks.push(check);
+      var checks = this.checksSub.getValue().slice();
+      checks.push(check);
 
-      this.checksSub.next(newChecks);
+      this.checksSub.next(checks);
     });
 
     return obs;

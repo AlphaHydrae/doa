@@ -7,7 +7,7 @@ import { ChecksService } from '../../services/checks.service';
 @Component({
   selector: 'create-check-dialog',
   templateUrl: 'views/checks-create-dialog/dialog.template.html',
-  providers: [ ChecksService ],
+  providers: [],
   directives: [ MODAL_DIRECTIVES, CreateCheckDialogComponent ],
   viewProviders: [ BS_VIEW_PROVIDERS ]
 })

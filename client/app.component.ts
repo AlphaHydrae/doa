@@ -9,7 +9,7 @@ import './rxjs';
 @Component({
   selector: 'my-app',
   templateUrl: 'app.template.html',
-  providers: [ ChecksService, CreateCheckDialogComponent ],
+  providers: [ CreateCheckDialogComponent ],
   directives: [ CreateCheckDialogComponent ]
 })
 export class AppComponent {
