@@ -1,4 +1,5 @@
-var addSrc = require('gulp-add-src'),
+var _ = require('lodash'),
+    addSrc = require('gulp-add-src'),
     autoprefixer = require('gulp-autoprefixer'),
     clean = require('gulp-clean'),
     concat = require('gulp-concat'),
@@ -25,6 +26,11 @@ var root = __dirname,
     tsProject = ts.createProject('client/tsconfig.json');
 
 var PluginError = util.PluginError;
+
+var src = {
+  index: { files: 'index.slm', options: { cwd: 'client' } },
+  templates: { files: [ '*/**/*.slm', 'app.template.slm' ], options: { cwd: 'client' } }
+};
 
 var files = {
   polyfills: [
@@ -109,13 +115,17 @@ gulp.task('nodemon', function() {
 });
 
 gulp.task('slm:content', function() {
-  return compileSlmChain(gulp.src([ '**/*.slm', '!index.slm' ], { cwd: 'client' }))
-    .pipe(gulp.dest('public'));
+  return task(src.templates)
+    .add(pipeSlm)
+    .add(pipeDevFiles);
 });
 
 gulp.task('slm:index', function() {
-  return createIndex('public', [].concat(files.polyfills).concat(files.development))
-    .pipe(gulp.dest('public'));
+  return task(src.index)
+    .add(pipeSlm)
+    .add(_.partial(pipeInject, _, [].concat(files.polyfills).concat(files.development), 'public'))
+    .add(_.partial(pipeInject, _, [].concat(files.css).concat([ 'public/**/*.css' ]), 'public'))
+    .add(pipeDevFiles);
 });
 
 gulp.task('slm', function(callback) {
@@ -134,7 +144,21 @@ gulp.task('ts', function() {
 });
 
 gulp.task('watch:slm', function() {
-  return compileSlmChain(watch([ '**/*.slm', '!index.slm' ], { cwd: 'client' }));
+  return watch(src.templates.files, src.templates.options, function(file) {
+    return task({ files: file.path, options: { base: 'client' } })
+      .add(pipeSlm)
+      .add(pipeDevFiles);
+  });
+});
+
+gulp.task('watch:slm:index', function() {
+  return watch(src.index.files, src.index.options, function(file) {
+    return task({ files: file.path, options: { base: 'client' } })
+      .add(pipeSlm)
+      .add(_.partial(pipeInject, _, [].concat(files.polyfills).concat(files.development), 'public'))
+      .add(_.partial(pipeInject, _, [].concat(files.css).concat([ 'public/**/*.css' ]), 'public'))
+      .add(pipeDevFiles);
+  });
 });
 
 gulp.task('watch:styl', function() {
@@ -149,7 +173,7 @@ gulp.task('watch:ts', function() {
 });
 
 gulp.task('watch', function(callback) {
-  return runSequence([ 'watch:slm', 'watch:styl', 'watch:ts' ], callback);
+  return runSequence([ 'watch:slm', 'watch:slm:index', 'watch:styl', 'watch:ts' ], callback);
 });
 
 gulp.task('webpack', [ 'ts' ], function() {
@@ -201,21 +225,24 @@ function createIndex(dest, js) {
     .pipe(inject(gulp.src(js || (dest + '/**/*.js'), { read: false }), { ignorePath: dest }));
 }
 
+function pipeInject(src, files, dest) {
+  return src.pipe(inject(gulp.src(files, { read: false }), { ignorePath: dest }));
+}
+
 function pipeStylus(src) {
   return src
     .pipe(stylus())
     .pipe(autoprefixer());
 }
 
-function pipeDevFiles(src) {
+function pipeDevFiles(src, dir) {
   return src
-    .pipe(gulp.dest('public'));
+    .pipe(gulp.dest(path.relative('.', path.join('public', dir || '.'))))
+    .pipe(livereload());
 }
 
 function pipeDevAssets(src) {
-  return src
-    .pipe(gulp.dest('public/assets'))
-    .pipe(livereload());
+  return pipeDevFiles(src, 'assets');
 }
 
 function pipeProdFiles(src) {
@@ -252,9 +279,38 @@ function compileSlm(file, enc, cb) {
   cb(null, file);
 }
 
+function pipeSlm(src) {
+  return src
+    .pipe(through.obj(compileSlm))
+    .on('error', util.log);
+}
+
 function compileSlmChain(src) {
   return src
     .pipe(through.obj(compileSlm))
     .pipe(gulp.dest('public'))
     .pipe(livereload());
 }
+
+function task(src) {
+  return new TaskBuilder(src);
+}
+
+function TaskBuilder(src) {
+  if (typeof(src.pipe) == 'function') {
+    this.src = src;
+  } else if (src.files) {
+    this.src = gulp.src(src.files, src.options || {});
+  } else {
+    this.src = gulp.src(src);
+  }
+}
+
+TaskBuilder.prototype.add = function(func) {
+  this.src = func(this.src);
+  return this;
+};
+
+TaskBuilder.prototype.end = function() {
+  return this.src;
+};
