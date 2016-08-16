@@ -3,11 +3,13 @@
     .modal-content
       .modal-header
         h4.modal-title Add a check
-      form
+      form ref-checkForm='ngForm'
         .modal-body
-          .form-group
-            label for='check-title' Title
-            input#check-title.form-control type='text' placeholder='What do you want to check?' bindon-ngModel='check.title' name='title'
+          .form-group bind-ngClass='{"has-error": checkName.invalid}'
+            label.control-label for='check-title' Title
+            input#check-title.form-control type='text' placeholder='What do you want to check?' bindon-ngModel='check.title' name='title' required=true ref-checkName='ngModel'
+            .help-block *ngIf='checkName.invalid'
+              | Name cannot be blank.
         .modal-footer
           .btn-group.pull-right
             button.btn.btn-default type='button' on-click='close()' Cancel

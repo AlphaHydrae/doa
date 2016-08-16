@@ -38,6 +38,7 @@ var files = {
     'node_modules/zone.js/dist/zone.js',
     'node_modules/reflect-metadata/Reflect.js',
     'node_modules/systemjs/dist/system.src.js',
+    'node_modules/lodash/lodash.js',
     'node_modules/ng2-bootstrap/bundles/ng2-bootstrap.js'
   ],
   development: [

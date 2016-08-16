@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { Component, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ng2-bootstrap/components/modal/modal.component';
 import { MODAL_DIRECTIVES, BS_VIEW_PROVIDERS } from 'ng2-bootstrap/ng2-bootstrap';
@@ -32,7 +33,7 @@ export class CreateCheckDialogComponent {
   }
 
   save() {
-    this.checksService.createCheck(this.check).subscribe(check => {
+    this.checksService.createCheck(_.extend(this.check, { interval: 1 })).subscribe(check => {
       this.close();
     });
   }
