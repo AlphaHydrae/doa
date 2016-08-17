@@ -1,6 +1,8 @@
 // DOA gulpfile
 // ============
 
+// TODO: log compiled files
+
 var _ = require('lodash'),
     addSrc = require('gulp-add-src'),
     autoprefixer = require('gulp-autoprefixer'),
@@ -33,6 +35,7 @@ var PluginError = util.PluginError;
 // Configuration
 // -------------
 
+// TODO: extract to watched file
 var files = {
   js: [
     'node_modules/core-js/client/shim.js',

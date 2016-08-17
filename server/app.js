@@ -13,6 +13,7 @@ app.set('views', config.path('server'));
 app.set('view engine', 'slm');
 
 app.use(favicon(config.path('dev', 'favicon.ico')));
+// TODO: customize logger to group asset logs
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
