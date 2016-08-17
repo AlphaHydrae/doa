@@ -19,4 +19,8 @@ export class HomePageComponent {
   public constructor(private checksService: ChecksService) {
     this.checks = this.checksService.checksObs;
   }
+
+  public delete(check) {
+    this.checksService.deleteCheck(check);
+  }
 }

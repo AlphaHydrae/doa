@@ -21,7 +21,7 @@ export class ChecksService {
     let obs = this.http.post('/api/checks', JSON.stringify(data), options).cache().map(this.extractData);
     obs.subscribe(check => {
 
-      var checks = this.checksSub.getValue().slice();
+      var checks = this.checksSub.getValue();
       checks.push(check);
 
       this.checksSub.next(checks);
@@ -40,7 +40,27 @@ export class ChecksService {
     return obs;
   }
 
+  deleteCheck(check) {
+
+    let obs = this.http.delete('/api/checks/' + check.id).cache().map(this.returnData(check));
+    obs.subscribe(check => {
+
+      let checks: Object[] = this.checksSub.getValue();
+      checks.splice(checks.indexOf(check), 1);
+
+      this.checksSub.next(checks);
+    });
+
+    return obs;
+  }
+
   private extractData(res) {
     return res.json();
+  }
+
+  private returnData(data) {
+    return function() {
+      return data;
+    };
   }
 }

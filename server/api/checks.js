@@ -9,7 +9,7 @@ var checks = [
   { title: 'Qux corge grault' }
 ];
 
-router.post('/', function(req, res, next) {
+router.post('/', function(req, res) {
 
   var data = Check.parse(req.body);
 
@@ -18,10 +18,29 @@ router.post('/', function(req, res, next) {
   }).catch(utils.errorHandler(res));
 });
 
-router.get('/', function(req, res, next) {
+router.get('/', function(req, res) {
   Check.find().sort('createdAt').exec().then(function(checks) {
     res.json(_.invokeMap(checks, 'serialize'));
   }).catch(utils.errorHandler(res));
 });
+
+router.delete('/:id', fetchCheck, function(req, res) {
+  req.record.remove().then(function() {
+    res.sendStatus(204);
+  }).catch(utils.errorHandler(res));
+});
+
+function fetchCheck(req, res, next) {
+  Check.findOne()
+    .where('apiId').equals(req.params.id)
+    .exec().then(function(check) {
+      if (!check) {
+        return res.sendStatus(404);
+      }
+
+      req.record = check;
+      next();
+    });
+}
 
 module.exports = router;

@@ -1,11 +1,20 @@
 .col-lg-6.col-lg-offset-3.col-md-8.col-md-offset-2.col-sm-10.col-sm-offset-1.col-xs-12
   p *ngIf="checks | async | empty" No check defined.
   ul.list-group *ngIf="checks | async | present"
-    li.list-group-item *ngFor="let check of checks | async"
+    li.list-group-item.clearfix *ngFor="let check of checks | async"
+      .btn-group.pull-right dropdown=true
+        button.btn.btn-default.btn-xs dropdownToggle=true
+          span.glyphicon.glyphicon-cog
+        ul.dropdown-menu role='menu' dropdownMenu=true
+          li role='menuitem'
+            a.dropdown-item href='#' on-click='delete(check)'
+              span.text-danger
+                span.glyphicon.glyphicon-trash>
+                | Delete
       | {{ check.title }}
 
 .col-lg-4.col-lg-offset-4.col-md-6.col-md-offset-3.col-sm-8.col-sm-offset-2.col-xs-10.col-xs-offset-1
   button.btn.btn-success.btn-lg.btn-block on-click='createCheckDialog.open()'
-      span.glyphicon.glyphicon-plus
+    span.glyphicon.glyphicon-plus
 
 create-check-dialog ref-createCheckDialog=true
