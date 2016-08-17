@@ -1,32 +1,25 @@
-import { Component, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, ViewContainerRef } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
-import { EmptyPipe } from './pipes/empty.pipe';
-import { PresentPipe } from './pipes/present.pipe';
-import { ChecksService } from './services/checks.service';
-import { CreateCheckDialogComponent } from './views/checks-create-dialog/dialog.component';
+import { HomePageComponent } from './components/home-page/component';
+import { NavbarComponent } from './components/navbar/component';
 
 import './rxjs';
 
 @Component({
-  selector: 'my-app',
+  selector: 'app',
   templateUrl: 'app.template.html',
-  providers: [ CreateCheckDialogComponent ],
-  directives: [ CreateCheckDialogComponent ],
-  pipes: [ EmptyPipe, PresentPipe ]
+  providers: [ HomePageComponent, NavbarComponent ],
+  directives: [ HomePageComponent, NavbarComponent ]
 })
 export class AppComponent {
 
-  title = 'DOA'
-  checks = null
+  public title = 'DOA';
 
-  public constructor(private checksService: ChecksService, private titleService: Title, public viewContainerRef: ViewContainerRef) {
+  public constructor(private titleService: Title, public viewContainerRef: ViewContainerRef) {
 
     this.viewContainerRef = viewContainerRef;
-    titleService.setTitle(this.title);
 
-    this.checksService.checksObs.subscribe(checks => {
-      this.checks = checks;
-    });
+    titleService.setTitle(this.title);
   }
 }

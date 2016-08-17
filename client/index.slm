@@ -1,16 +1,17 @@
 doctype html
 html
   head
-    title ...
+    title DOA
+
+    base href='/'
 
     meta name='viewport' content='width=device-width initial-scale=1'
-    base href='/'
 
     /! inject:css
     /! endinject
-  body ref-body=true
-    #modal
-    my-app
+  body
+
+    app
       p Loading...
 
     /! inject:js
