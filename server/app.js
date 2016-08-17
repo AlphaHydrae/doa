@@ -12,13 +12,12 @@ var app = express(),
 app.set('views', config.path('server'));
 app.set('view engine', 'slm');
 
-// uncomment after placing your favicon in /public
-app.use(favicon(config.path('public', 'favicon.ico')));
+app.use(favicon(config.path('dev', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(config.path('public')));
+app.use(express.static(config.path('dev')));
 app.use('/node_modules', express.static(config.path('node_modules')));
 
 app.use('/api', require('./api'));
@@ -28,7 +27,7 @@ require('./db');
 var router = express.Router();
 
 function serveIndex(req, res) {
-  res.sendFile('index.html', { root: config.path('public') });
+  res.sendFile('index.html', { root: config.path('dev') });
 }
 
 router.all('/api/*', function(req, res) {

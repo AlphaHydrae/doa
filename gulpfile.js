@@ -1,3 +1,6 @@
+// DOA gulpfile
+// ============
+
 var _ = require('lodash'),
     addSrc = require('gulp-add-src'),
     autoprefixer = require('gulp-autoprefixer'),
@@ -27,13 +30,11 @@ var root = __dirname,
 
 var PluginError = util.PluginError;
 
-var src = {
-  index: { files: 'index.slm', options: { cwd: 'client' } },
-  templates: { files: [ '*/**/*.slm', 'app.template.slm' ], options: { cwd: 'client' } }
-};
+// Configuration
+// -------------
 
 var files = {
-  polyfills: [
+  js: [
     'node_modules/core-js/client/shim.js',
     'node_modules/zone.js/dist/zone.js',
     'node_modules/reflect-metadata/Reflect.js',
@@ -41,25 +42,51 @@ var files = {
     'node_modules/lodash/lodash.js',
     'node_modules/ng2-bootstrap/bundles/ng2-bootstrap.js'
   ],
-  development: [
-    'public/assets/system.js'
+  devJs: [
+    'dev/assets/system.js'
   ],
-  production: [
+  prodJs: [
     'tmp/assets/bundle.js'
   ],
   css: [
     'node_modules/bootstrap/dist/css/bootstrap.css',
     'node_modules/bootstrap/dist/css/bootstrap-theme.css'
-  ]
+  ],
+  devCss: []
 };
+
+var src = {
+  index: { cwd: 'client', files: 'index.slm' },
+  templates: { cwd: 'client', files: [ '*/**/*.slm', 'app.template.slm' ] },
+  favicon: { files: 'client/favicon.ico' },
+  rawJs: { cwd: 'client', files: '**/*.js' },
+  styl: { cwd: 'client', files: '**/*.styl' },
+  ts: { cwd: 'client', files: '**/*.ts' },
+  main: { files: 'dev/assets/main.js' },
+  prodJs: { files: [].concat(files.js).concat(files.prodJs) }
+};
+
+var injections = {
+  development: {
+    js: [].concat(files.js).concat(files.devJs),
+    css: [].concat(files.css).concat(files.devCss)
+  },
+  production: {
+    js: [ 'dist/assets/**/*.js' ],
+    css: [ 'dist/assets/**/*.css' ]
+  }
+};
+
+// Cleanup Tasks
+// -------------
 
 gulp.task('clean:dist', function() {
   return gulp.src('dist/*', { read: false })
     .pipe(clean());
 });
 
-gulp.task('clean:public', function() {
-  return gulp.src('public/*', { read: false })
+gulp.task('clean:dev', function() {
+  return gulp.src('dev/*', { read: false })
     .pipe(clean());
 });
 
@@ -68,31 +95,24 @@ gulp.task('clean:tmp', function() {
     .pipe(clean());
 });
 
-gulp.task('clean', [ 'clean:dist', 'clean:public' ]);
+gulp.task('clean', [ 'clean:dist', 'clean:dev', 'clean:tmp' ]);
 
-gulp.task('compile', [ 'copy' ], function(callback) {
-  return runSequence([ 'slm:content', 'styl', 'ts' ], 'slm:index', callback);
-});
+// Development Tasks
+// -----------------
 
 gulp.task('copy:favicon', function() {
-  return gulp.src('client/favicon.ico')
-    .pipe(gulp.dest('public'));
+  return task(src.favicon)
+    .add(pipeDevFiles)
+    .end();
 });
 
 gulp.task('copy:js', function() {
-  return gulp.src('**/*.js', { cwd: 'client' })
-    .pipe(gulp.dest('public/assets'));
+  return task(src.rawJs)
+    .add(pipeDevAssets)
+    .end();
 });
 
-gulp.task('copy', function(callback) {
-  return runSequence([ 'copy:favicon', 'copy:js' ], callback);
-});
-
-gulp.task('env:prod', function() {
-  env.set({
-    NODE_ENV: 'production'
-  });
-});
+gulp.task('copy', [ 'copy:favicon', 'copy:js' ]);
 
 gulp.task('nodemon', function() {
   livereload.listen();
@@ -115,135 +135,173 @@ gulp.task('nodemon', function() {
   });
 });
 
-gulp.task('slm:content', function() {
+gulp.task('slm:templates', function() {
   return task(src.templates)
     .add(pipeSlm)
-    .add(pipeDevFiles);
+    .add(pipeDevFiles)
+    .end();
 });
 
 gulp.task('slm:index', function() {
   return task(src.index)
     .add(pipeSlm)
-    .add(_.partial(pipeInject, _, [].concat(files.polyfills).concat(files.development), 'public'))
-    .add(_.partial(pipeInject, _, [].concat(files.css).concat([ 'public/**/*.css' ]), 'public'))
-    .add(pipeDevFiles);
+    .add(pipeAutoInjectFactory('dev'))
+    .add(pipeDevFiles)
+    .end();
 });
 
-gulp.task('slm', function(callback) {
-  return runSequence([ 'slm:content', 'slm:index' ], callback);
-});
+gulp.task('slm', [ 'slm:templates', 'slm:index' ]);
 
 gulp.task('styl', function() {
-  return pipeDevAssets(pipeStylus(gulp.src('**/*.styl', { cwd: 'client' })));
+  return task(src.styl)
+    .add(pipeCompileStylus)
+    .add(pipeDevAssets)
+    .end();
 });
 
 gulp.task('ts', function() {
-  return gulp.src('**/*.ts', { cwd: 'client' })
-    .pipe(ts(tsProject))
-    .pipe(gulp.dest('public/assets'))
-    .pipe(livereload());
+  return task(src.ts)
+    .add(pipeCompileTypescript)
+    .add(pipeDevAssets)
+    .end();
 });
 
-gulp.task('watch:slm', function() {
-  return watch(src.templates.files, src.templates.options, function(file) {
-    return task({ files: file.path, options: { base: 'client' } })
+gulp.task('compile', sequence('clean:dev', [ 'copy', 'ts', 'slm:templates', 'styl' ], 'slm:index'));
+
+gulp.task('watch:slm:templates', function() {
+  return watchSrc(src.templates, function(file) {
+    return watchTask(file, 'client')
       .add(pipeSlm)
-      .add(pipeDevFiles);
+      .add(pipeDevFiles)
+      .end();
   });
 });
 
 gulp.task('watch:slm:index', function() {
-  return watch(src.index.files, src.index.options, function(file) {
-    return task({ files: file.path, options: { base: 'client' } })
+  return watchSrc(src.index, function(file) {
+    return watchTask(file, 'client')
       .add(pipeSlm)
-      .add(_.partial(pipeInject, _, [].concat(files.polyfills).concat(files.development), 'public'))
-      .add(_.partial(pipeInject, _, [].concat(files.css).concat([ 'public/**/*.css' ]), 'public'))
-      .add(pipeDevFiles);
+      .add(pipeAutoInjectFactory('dev'))
+      .add(pipeDevFiles)
+      .end();
   });
 });
 
 gulp.task('watch:styl', function() {
-  return pipeDevAssets(pipeStylus(watch('**/*.styl', {
-    cwd: 'client',
-    ignoreInitial: true
-  })));
+  return watchSrc(src.styl, function(file) {
+    return watchTask(file, 'client')
+      .add(pipeCompileStylus)
+      .add(pipeDevAssets)
+      .end();
+  });
 });
 
 gulp.task('watch:ts', function() {
   return gulp.watch('client/**/*.ts', [ 'ts' ]);
 });
 
-gulp.task('watch', function(callback) {
-  return runSequence([ 'watch:slm', 'watch:slm:index', 'watch:styl', 'watch:ts' ], callback);
+gulp.task('watch', [ 'watch:slm:templates', 'watch:slm:index', 'watch:styl', 'watch:ts' ]);
+
+gulp.task('dev', sequence('clean:dev', 'compile', [ 'nodemon', 'watch' ]));
+
+// Production Tasks
+// ----------------
+
+gulp.task('env:prod', function() {
+  env.set({
+    NODE_ENV: 'production'
+  });
+});
+
+gulp.task('dist:css', function() {
+  return task(src.styl)
+    .add(pipeCompileStylus)
+    .pipe(concat('app.css'))
+    .pipe(cssmin())
+    .add(pipeProdAssets)
+    .end();
 });
 
 gulp.task('webpack', [ 'ts' ], function() {
-  return gulp.src('public/assets/main.js')
+  return task(src.main)
     .pipe(webpack({
       output: {
         filename: 'bundle.js'
       }
     }))
-    .pipe(gulp.dest('tmp/assets'));
-});
-
-gulp.task('dev', function(callback) {
-  return runSequence('clean:public', 'compile', [ 'nodemon', 'watch' ], callback);
-});
-
-gulp.task('dist:css', function() {
-  return pipeProdAssets(pipeStylus(gulp.src('**/*.styl', { cwd: 'client' })).pipe(concat('app.css')).pipe(cssmin()));
+    .pipe(gulp.dest('tmp/assets'))
+    .end();
 });
 
 gulp.task('dist:js', [ 'webpack' ], function() {
-  return pipeProdAssets(gulp.src([].concat(files.polyfills).concat(files.production))
+  return task(src.prodJs)
     .pipe(concat('app.js'))
-    .pipe(uglify()));
+    .pipe(uglify())
+    .add(pipeProdAssets)
+    .end();
 });
 
 gulp.task('dist:index', function() {
-  return pipeProdFiles(createIndex('dist').pipe(removeHtmlComments()));
+  return task(src.index)
+    .add(pipeSlm)
+    .add(pipeAutoInjectFactory('dist'))
+    .pipe(removeHtmlComments())
+    .add(pipeProdFiles)
+    .end();
 });
 
-gulp.task('dist', function(callback) {
-  return runSequence('env:prod', [ 'clean:dist', 'clean:tmp' ], [ 'dist:css', 'dist:js' ], 'dist:index', callback);
+gulp.task('dist:favicon', function() {
+  return task(src.favicon)
+    .add(pipeProdFiles)
+    .end();
 });
+
+gulp.task('dist', sequence('env:prod', [ 'clean:dist', 'clean:tmp' ], [ 'dist:css', 'dist:favicon', 'dist:js' ], 'dist:index'));
+
+// Default Task
+// ------------
 
 gulp.task('default', [ 'dev' ]);
 
-var config;
-function getConfig() {
-  if (!config) {
-    config = require('./config');
-  }
+// Reusable piping functions
+// -------------------------
 
-  return config;
+function pipeAutoInjectFactory(dest) {
+  return function(src) {
+
+    var config = getConfig()
+
+    function autoInject(files) {
+      return inject(gulp.src(files, { read: false }), { ignorePath: dest });
+    }
+
+    return task(src)
+      .pipe(autoInject(injections[config.env].js))
+      .pipe(autoInject(injections[config.env].css))
+      .end();
+  };
 }
 
-function createIndex(dest, js) {
-  return compileSlmChain(gulp.src('index.slm', { cwd: 'client' }))
-    .pipe(inject(gulp.src([].concat(files.css).concat([ dest + '/**/*.css' ]), { read: false }), { ignorePath: dest }))
-    .pipe(inject(gulp.src(js || (dest + '/**/*.js'), { read: false }), { ignorePath: dest }));
-}
-
-function pipeInject(src, files, dest) {
-  return src.pipe(inject(gulp.src(files, { read: false }), { ignorePath: dest }));
-}
-
-function pipeStylus(src) {
+function pipeCompileStylus(src) {
   return src
     .pipe(stylus())
     .pipe(autoprefixer());
 }
 
+function pipeCompileTypescript(src) {
+  return src
+    .pipe(ts(tsProject));
+}
+
 function pipeDevFiles(src, dir) {
   return src
-    .pipe(gulp.dest(path.relative('.', path.join('public', dir || '.'))))
+    .pipe(gulp.dest('dev'))
     .pipe(livereload());
 }
 
 function pipeDevAssets(src) {
-  return pipeDevFiles(src, 'assets');
+  return src
+    .pipe(gulp.dest('dev/assets'));
 }
 
 function pipeProdFiles(src) {
@@ -255,6 +313,24 @@ function pipeProdAssets(src) {
   return src
     .pipe(rev())
     .pipe(gulp.dest('dist/assets'));
+}
+
+function pipeSlm(src) {
+  return src
+    .pipe(through.obj(compileSlm))
+    .on('error', util.log);
+}
+
+// Utility functions
+// -----------------
+
+var _config;
+function getConfig() {
+  if (!_config) {
+    _config = require('./config');
+  }
+
+  return _config;
 }
 
 function compileSlm(file, enc, cb) {
@@ -280,17 +356,19 @@ function compileSlm(file, enc, cb) {
   cb(null, file);
 }
 
-function pipeSlm(src) {
-  return src
-    .pipe(through.obj(compileSlm))
-    .on('error', util.log);
+function sequence() {
+  var tasks = Array.prototype.slice.call(arguments);
+  return function(callback) {
+    return runSequence.apply(undefined, [].concat(tasks).concat([ callback ]));
+  };
 }
 
-function compileSlmChain(src) {
-  return src
-    .pipe(through.obj(compileSlm))
-    .pipe(gulp.dest('public'))
-    .pipe(livereload());
+function gulpifySrc(src) {
+  return gulp.src(src.files, getSrcOptions(src));
+}
+
+function getSrcOptions(src) {
+  return _.pick(src, 'base', 'cwd');
 }
 
 function task(src) {
@@ -301,7 +379,7 @@ function TaskBuilder(src) {
   if (typeof(src.pipe) == 'function') {
     this.src = src;
   } else if (src.files) {
-    this.src = gulp.src(src.files, src.options || {});
+    this.src = gulpifySrc(src);
   } else {
     this.src = gulp.src(src);
   }
@@ -312,6 +390,19 @@ TaskBuilder.prototype.add = function(func) {
   return this;
 };
 
+TaskBuilder.prototype.pipe = function(func) {
+  this.src = this.src.pipe(func);
+  return this;
+};
+
 TaskBuilder.prototype.end = function() {
   return this.src;
 };
+
+function watchSrc(src, callback) {
+  return watch(src.files, getSrcOptions(src), callback);
+}
+
+function watchTask(file, base) {
+  return task({ files: file.path, base: base });
+}

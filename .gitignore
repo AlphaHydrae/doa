@@ -2,7 +2,7 @@
 /*.log
 /build
 /client/typings
+/dev
 /dist
 /node_modules
-/public
 /tmp
