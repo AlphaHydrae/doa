@@ -52,7 +52,9 @@ var files = {
     'node_modules/bootstrap/dist/css/bootstrap.css',
     'node_modules/bootstrap/dist/css/bootstrap-theme.css'
   ],
-  devCss: []
+  devCss: [
+    'dev/assets/**/*.css'
+  ]
 };
 
 var src = {
@@ -213,6 +215,7 @@ gulp.task('env:prod', function() {
   });
 });
 
+// FIXME: include app css
 gulp.task('dist:css', function() {
   return task(src.styl)
     .add(pipeCompileStylus)
@@ -301,7 +304,8 @@ function pipeDevFiles(src, dir) {
 
 function pipeDevAssets(src) {
   return src
-    .pipe(gulp.dest('dev/assets'));
+    .pipe(gulp.dest('dev/assets'))
+    .pipe(livereload());
 }
 
 function pipeProdFiles(src) {
