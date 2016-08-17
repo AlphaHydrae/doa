@@ -1,8 +1,9 @@
-var bodyParser = require('body-parser'),
+var _ = require('lodash'),
+    bodyParser = require('body-parser'),
     cookieParser = require('cookie-parser'),
     express = require('express'),
     favicon = require('serve-favicon'),
-    logger = require('morgan'),
+    log4js = require('log4js'),
     path = require('path');
 
 var app = express(),
@@ -12,9 +13,52 @@ var app = express(),
 app.set('views', config.path('server'));
 app.set('view engine', 'slm');
 
+var logger = log4js.getLogger('express'),
+    connectLogger = log4js.connectLogger(logger, {
+      level: log4js.levels.TRACE,
+      format: ':method :url :status :response-time ms'
+    })
+
+var groupLog = [ /^\/assets\//, /^\/node_modules\// ];
+
+app.use(function(req, res, next) {
+
+  var group = _.some(groupLog, function(regexp) {
+    return regexp.exec(req.path);
+  });
+
+  if (group) {
+    logAssets(req, res, next);
+  } else {
+    connectLogger(req, res, next);
+  }
+});
+
+var start = null,
+    groupedCount = 0;
+
+function logAssets(req, res, next) {
+
+  if (!start) {
+    start = new Date().getTime();
+  }
+
+  groupedCount++;
+
+  logAssetsDebounced(req, res, next);
+
+  next();
+}
+
+var logAssetsDebounced = _.debounce(function(req, res ,next) {
+
+  logger.trace('GET ... (' + groupedCount + ' assets) ' + (new Date().getTime() - start) + ' ms');
+
+  start = null;
+  groupedCount = 0;
+}, 1000);
+
 app.use(favicon(config.path('dev', 'favicon.ico')));
-// TODO: customize logger to group asset logs
-app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
