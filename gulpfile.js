@@ -1,7 +1,8 @@
 // DOA gulpfile
 // ============
 
-// TODO: log compiled files
+// TODO: smart livereload
+// TODO: log dist file size
 
 var _ = require('lodash'),
     addSrc = require('gulp-add-src'),
@@ -10,11 +11,13 @@ var _ = require('lodash'),
     concat = require('gulp-concat'),
     cssmin = require('gulp-cssmin'),
     env = require('gulp-env'),
+    fs = require('fs'),
     gulp = require('gulp'),
     inject = require('gulp-inject'),
     livereload = require('gulp-livereload'),
     nodemon = require('gulp-nodemon'),
     path = require('path'),
+    prettyBytes = require('pretty-bytes'),
     rev = require('gulp-rev'),
     removeHtmlComments = require('gulp-remove-html-comments'),
     runSequence = require('run-sequence'),
@@ -61,12 +64,12 @@ var files = {
 };
 
 var src = {
-  index: { cwd: 'client', files: 'index.slm' },
-  templates: { cwd: 'client', files: [ '*/**/*.slm', 'app.template.slm' ] },
+  index: { files: 'index.slm', cwd: 'client' },
+  templates: { files: [ '*/**/*.slm', 'app.template.slm' ], cwd: 'client' },
   favicon: { files: 'client/favicon.ico' },
-  rawJs: { cwd: 'client', files: '**/*.js' },
-  styl: { cwd: 'client', files: '**/*.styl' },
-  ts: { cwd: 'client', files: '**/*.ts' },
+  rawJs: { files: '**/*.js', cwd: 'client' },
+  styl: { files: '**/*.styl', cwd: 'client' },
+  ts: { files: '**/*.ts', cwd: 'client' },
   main: { files: 'dev/assets/main.js' },
   prodJs: { files: [].concat(files.js).concat(files.prodJs) }
 };
@@ -107,12 +110,14 @@ gulp.task('clean', [ 'clean:dist', 'clean:dev', 'clean:tmp' ]);
 
 gulp.task('copy:favicon', function() {
   return task(src.favicon)
+    .pipe(logFactory('dev'))
     .add(pipeDevFiles)
     .end();
 });
 
 gulp.task('copy:js', function() {
   return task(src.rawJs)
+    .pipe(logFactory('dev'))
     .add(pipeDevAssets)
     .end();
 });
@@ -142,6 +147,7 @@ gulp.task('nodemon', function() {
 
 gulp.task('slm:templates', function() {
   return task(src.templates)
+    .pipe(logFactory('dev', 'slm', 'html'))
     .add(pipeSlm)
     .add(pipeDevFiles)
     .end();
@@ -149,6 +155,7 @@ gulp.task('slm:templates', function() {
 
 gulp.task('slm:index', function() {
   return task(src.index)
+    .pipe(logFactory('dev', 'slm', 'html'))
     .add(pipeSlm)
     .add(pipeAutoInjectFactory('dev'))
     .add(pipeDevFiles)
@@ -159,6 +166,7 @@ gulp.task('slm', [ 'slm:templates', 'slm:index' ]);
 
 gulp.task('styl', function() {
   return task(src.styl)
+    .pipe(logFactory('dev/assets', 'styl', 'css'))
     .add(pipeCompileStylus)
     .add(pipeDevAssets)
     .end();
@@ -176,6 +184,7 @@ gulp.task('compile', sequence('clean:dev', [ 'copy', 'ts', 'slm:templates', 'sty
 gulp.task('watch:slm:templates', function() {
   return watchSrc(src.templates, function(file) {
     return watchTask(file, 'client')
+      .pipe(logFactory('dev', 'slm', 'html'))
       .add(pipeSlm)
       .add(pipeDevFiles)
       .end();
@@ -185,6 +194,7 @@ gulp.task('watch:slm:templates', function() {
 gulp.task('watch:slm:index', function() {
   return watchSrc(src.index, function(file) {
     return watchTask(file, 'client')
+      .pipe(logFactory('dev', 'slm', 'html'))
       .add(pipeSlm)
       .add(pipeAutoInjectFactory('dev'))
       .add(pipeDevFiles)
@@ -195,6 +205,7 @@ gulp.task('watch:slm:index', function() {
 gulp.task('watch:styl', function() {
   return watchSrc(src.styl, function(file) {
     return watchTask(file, 'client')
+      .pipe(logFactory('dev/assets', 'styl', 'css'))
       .add(pipeCompileStylus)
       .add(pipeDevAssets)
       .end();
@@ -218,11 +229,12 @@ gulp.task('env:prod', function() {
   });
 });
 
-// FIXME: include app css
 gulp.task('dist:css', function() {
   return task(src.styl)
     .add(pipeCompileStylus)
+    .pipe(addSrc.prepend(files.css))
     .pipe(concat('app.css'))
+    .pipe(storeDistInitialSizeFactory('css'))
     .pipe(cssmin())
     .add(pipeProdAssets)
     .end();
@@ -313,13 +325,15 @@ function pipeDevAssets(src) {
 
 function pipeProdFiles(src) {
   return src
-    .pipe(gulp.dest('dist'));
+    .pipe(gulp.dest('dist'))
+    .pipe(logDistFactory());
 }
 
 function pipeProdAssets(src) {
   return src
     .pipe(rev())
-    .pipe(gulp.dest('dist/assets'));
+    .pipe(gulp.dest('dist/assets'))
+    .pipe(logDistFactory());
 }
 
 function pipeSlm(src) {
@@ -338,6 +352,57 @@ function getConfig() {
   }
 
   return _config;
+}
+
+function logFactory(to, fromExt, toExt, from) {
+  if (!from) {
+    from = 'client';
+  }
+
+  return through.obj(function(file, enc, callback) {
+
+    var relativePath = path.relative(from, file.path),
+        fromPath = path.join(from, relativePath),
+        toPath = path.join(to, relativePath);
+
+    if (fromExt && toExt) {
+      toPath = toPath.replace(new RegExp('\\.' + fromExt + '$'), '.' + toExt)
+    }
+
+    util.log(util.colors.cyan(fromPath) + ' -> ' + util.colors.cyan(toPath));
+
+    callback(null, file);
+  });
+}
+
+var sizes = {};
+
+function storeDistInitialSizeFactory(name) {
+  sizes[name] = 0;
+
+  return through.obj(function(file, enc, callback) {
+    sizes[name] += file.contents.length;
+    callback(null, file);
+  });
+}
+
+function logDistFactory(name) {
+  return through.obj(function(file, enc, callback) {
+
+    var relativePath = path.relative('dist', file.path),
+        toPath = path.join('dist', relativePath);
+
+    var size = prettyBytes(file.contents.length);
+
+    var name = toPath.replace(/.*\./, '');
+    if (sizes[name]) {
+      size = prettyBytes(sizes[name]) + ' -> ' + size;
+    }
+
+    util.log(util.colors.blue(toPath + ' - ' + size));
+
+    callback(null, file);
+  });
 }
 
 function compileSlm(file, enc, cb) {

@@ -1,6 +1,5 @@
 var _ = require('lodash'),
     bodyParser = require('body-parser'),
-    cookieParser = require('cookie-parser'),
     express = require('express'),
     favicon = require('serve-favicon'),
     log4js = require('log4js'),
@@ -61,7 +60,6 @@ var logAssetsDebounced = _.debounce(function(req, res ,next) {
 app.use(favicon(config.path('dev', 'favicon.ico')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(config.path('dev')));
 app.use('/node_modules', express.static(config.path('node_modules')));
 
