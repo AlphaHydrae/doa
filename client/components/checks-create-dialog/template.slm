@@ -7,7 +7,7 @@
         .modal-body
           .form-group bind-ngClass='{"has-error": checkName.invalid}'
             label.control-label for='check-title' Title
-            input#check-title.form-control type='text' placeholder='What do you want to check?' bindon-ngModel='check.title' name='title' required=true ref-checkName='ngModel'
+            input#check-title.form-control type='text' placeholder='What do you want to check?' bindon-ngModel='check.title' name='title' required=true ref-checkName='ngModel' checkTitleUniqueness=true
             .help-block *ngIf='checkName.invalid'
               | Name cannot be blank.
         .modal-footer

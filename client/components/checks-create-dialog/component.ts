@@ -1,14 +1,15 @@
 import * as _ from 'lodash';
 import { Component, ViewChild } from '@angular/core';
+import { Control } from '@angular/common';
 import { ModalDirective } from 'ng2-bootstrap/components/modal/modal.component';
 
 import { ChecksService } from '../../services/checks.service';
+import { CheckTitleUniquenessValidator } from './title-validator';
 
 @Component({
   selector: 'create-check-dialog',
   templateUrl: 'components/checks-create-dialog/template.html',
-  providers: [],
-  directives: [ CreateCheckDialogComponent ]
+  directives: [ CreateCheckDialogComponent, CheckTitleUniquenessValidator ]
 })
 export class CreateCheckDialogComponent {
 
@@ -16,9 +17,11 @@ export class CreateCheckDialogComponent {
   public modal: ModalDirective;
 
   public check: Object;
+  private titleField: Control;
 
   public constructor(private checksService: ChecksService) {
     this.check = {};
+    //this.titleField = new Control('', null, checkValidator.checkTitleUniqueness.bind(checkValidator));
   }
 
   open() {
