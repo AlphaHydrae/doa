@@ -12,6 +12,7 @@ var _ = require('lodash'),
     cssmin = require('gulp-cssmin'),
     env = require('gulp-env'),
     fs = require('fs'),
+    getFolderSize = require('get-folder-size'),
     gulp = require('gulp'),
     inject = require('gulp-inject'),
     livereload = require('gulp-livereload'),
@@ -254,6 +255,7 @@ gulp.task('webpack', [ 'ts' ], function() {
 gulp.task('dist:js', [ 'webpack' ], function() {
   return task(src.prodJs)
     .pipe(concat('app.js'))
+    .pipe(storeDistInitialSizeFactory('js'))
     .pipe(uglify())
     .add(pipeProdAssets)
     .end();
@@ -263,6 +265,7 @@ gulp.task('dist:index', function() {
   return task(src.index)
     .add(pipeSlm)
     .add(pipeAutoInjectFactory('dist'))
+    .pipe(storeDistInitialSizeFactory('html'))
     .pipe(removeHtmlComments())
     .add(pipeProdFiles)
     .end();
@@ -274,7 +277,18 @@ gulp.task('dist:favicon', function() {
     .end();
 });
 
-gulp.task('dist', sequence('env:prod', [ 'clean:dist', 'clean:tmp' ], [ 'dist:css', 'dist:favicon', 'dist:js' ], 'dist:index'));
+gulp.task('dist:size', function(callback) {
+  getFolderSize('dist', function(err, size) {
+    if (err) {
+      return callback(err);
+    }
+
+    util.log(util.colors.blue('dist - ' + prettyBytes(size)));
+    callback();
+  });
+});
+
+gulp.task('dist', sequence('env:prod', [ 'clean:dist', 'clean:tmp' ], [ 'dist:css', 'dist:favicon', 'dist:js' ], 'dist:index', 'dist:size'));
 
 // Default Task
 // ------------
