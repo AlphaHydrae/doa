@@ -1,4 +1,4 @@
-exports.errorHandler = function(res) {
+exports.handler = function(res) {
   return function(err) {
 
     var data = {};

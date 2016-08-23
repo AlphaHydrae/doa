@@ -1,6 +1,5 @@
 var express = require('express'),
-    router = express.Router(),
-    utils = require('./utils');
+    router = express.Router();
 
 router.use('/checks', require('./checks'));
 
