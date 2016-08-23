@@ -1,5 +1,6 @@
+import { Control } from '@angular/common';
 import { Injectable } from '@angular/core';
-import { Headers, Http, RequestOptions, Response } from '@angular/http';
+import { Headers, Http, RequestOptions, Response, URLSearchParams } from '@angular/http';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 
@@ -52,6 +53,24 @@ export class ChecksService {
     });
 
     return obs;
+  }
+
+  validateTitleAvailable(control: Control): {[key: string]: any} {
+
+    let query = new URLSearchParams();
+    query.set('title', control.value);
+
+    return this.http.get('/api/checks', {
+      search: query
+    }).map(this.extractData).map(checks => {
+      if (!checks.length) {
+        return;
+      }
+
+      return {
+        titleAvailable: true
+      };
+    });
   }
 
   private extractData(res) {

@@ -1,31 +1,39 @@
 import * as _ from 'lodash';
-import { Component, ViewChild } from '@angular/core';
-import { Control } from '@angular/common';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ModalDirective } from 'ng2-bootstrap/components/modal/modal.component';
 
 import { ChecksService } from '../../services/checks.service';
-import { CheckTitleUniquenessValidator } from './title-validator';
 
 @Component({
   selector: 'create-check-dialog',
   templateUrl: 'components/checks-create-dialog/template.html',
-  directives: [ CreateCheckDialogComponent, CheckTitleUniquenessValidator ]
+  directives: [ CreateCheckDialogComponent ]
 })
-export class CreateCheckDialogComponent {
+export class CreateCheckDialogComponent implements OnInit {
 
   @ViewChild(ModalDirective)
   public modal: ModalDirective;
 
-  public check: Object;
-  private titleField: Control;
+  private checkForm: FormGroup;
 
-  public constructor(private checksService: ChecksService) {
-    this.check = {};
-    //this.titleField = new Control('', null, checkValidator.checkTitleUniqueness.bind(checkValidator));
+  public constructor(private checksService: ChecksService, private formBuilder: FormBuilder) {
+  }
+
+  ngOnInit() {
+    this.checkForm = this.formBuilder.group({
+      title: [
+        '',
+        Validators.compose([
+          Validators.required,
+          Validators.maxLength(50)
+        ]),
+        this.checksService.validateTitleAvailable.bind(this.checksService)
+      ]
+    });
   }
 
   open() {
-    this.check = {};
     this.modal.show();
   }
 
@@ -34,7 +42,10 @@ export class CreateCheckDialogComponent {
   }
 
   save() {
-    this.checksService.createCheck(_.extend(this.check, { interval: 1 })).subscribe(check => {
+
+    var data = _.extend(this.checkForm.value, { interval: 1 });
+
+    this.checksService.createCheck(data).subscribe(check => {
       this.close();
     });
   }
