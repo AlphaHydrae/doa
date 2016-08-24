@@ -15,4 +15,4 @@
         .modal-footer
           .btn-group.pull-right
             button.btn.btn-default type='button' on-click='close()' Cancel
-            button.btn.btn-primary type='submit' on-click='save()' Save
+            button.btn.btn-primary type='submit' bind-disabled='checkForm.invalid || checkForm.pending' on-click='save()' Save

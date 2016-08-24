@@ -3,6 +3,9 @@ var _ = require('lodash'),
     errors = require('../../lib/errors'),
     pagination = require('../../lib/pagination');
 
+/**
+ * POST /api/checks
+ */
 exports.create = function(req, res) {
 
   var data = Check.parse(req.body);
@@ -12,6 +15,9 @@ exports.create = function(req, res) {
   }).catch(errors.handler(res));
 };
 
+/**
+ * GET /api/checks
+ */
 exports.retrieveAll = function(req, res) {
 
   var query = Check.find().sort('createdAt')
@@ -30,6 +36,9 @@ exports.retrieveAll = function(req, res) {
   }).catch(errors.handler(res));
 };
 
+/**
+ * DELETE /api/checks/:id
+ */
 exports.destroy = function(req, res) {
   req.record.remove().then(function() {
     res.sendStatus(204);
@@ -37,7 +46,8 @@ exports.destroy = function(req, res) {
 };
 
 exports.fetchRecord = function(req, res, next) {
-  Check.findOne()
+  Check
+    .findOne()
     .where('apiId').equals(req.params.id)
     .exec().then(function(check) {
       if (!check) {

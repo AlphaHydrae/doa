@@ -4,13 +4,14 @@ import { DROPDOWN_DIRECTIVES, MODAL_DIRECTIVES, BS_VIEW_PROVIDERS } from 'ng2-bo
 
 import { HomePageComponent } from './components/home-page/component';
 import { NavbarComponent } from './components/navbar/component';
+import { Logger } from './services/log.service';
 
 import './rxjs';
 
 @Component({
   selector: 'app',
   templateUrl: 'app.template.html',
-  providers: [ HomePageComponent, NavbarComponent ],
+  providers: [ HomePageComponent, Logger, NavbarComponent ],
   directives: [ DROPDOWN_DIRECTIVES, MODAL_DIRECTIVES, HomePageComponent, NavbarComponent ],
   viewProviders: [ BS_VIEW_PROVIDERS ]
 })

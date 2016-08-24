@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ModalDirective } from 'ng2-bootstrap/components/modal/modal.component';
 
 import { ChecksService } from '../../services/checks.service';
+import { Logger } from '../../services/log.service';
 
 @Component({
   selector: 'create-check-dialog',
@@ -17,7 +18,7 @@ export class CreateCheckDialogComponent implements OnInit {
 
   private checkForm: FormGroup;
 
-  public constructor(private checksService: ChecksService, private formBuilder: FormBuilder) {
+  public constructor(private checksService: ChecksService, private formBuilder: FormBuilder, private log: Logger) {
   }
 
   ngOnInit() {
@@ -42,11 +43,17 @@ export class CreateCheckDialogComponent implements OnInit {
   }
 
   save() {
+    if (!this.checkForm.valid) {
+      this.log.warn('Check form is not valid');
+      return;
+    }
 
     var data = _.extend(this.checkForm.value, { interval: 1 });
+
+    this.log.debug('Saving ' + JSON.stringify(data));
 
     this.checksService.createCheck(data).subscribe(check => {
       this.close();
     });
-  }
+ }
 }
