@@ -6,7 +6,7 @@ var _ = require('lodash'),
     uuid = require('uuid');
 
 var CheckSchema = new Schema({
-  apiId: { type: String },
+  apiId: { type: String, unique: true },
   title: { type: String, required: true, maxlength: 50, unique: true },
   interval: { type: Number, required: true, integer: true, min: 1 },
   checkedAt: { type: Date }

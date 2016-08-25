@@ -5,11 +5,12 @@ var _ = require('lodash'),
 var pkg = require(path.join('..', 'package')),
     root = path.normalize(path.join(__dirname, '..'));
 
-var liveReloadPort = process.env.LIVERELOAD_PORT || 35729;
+var liveReloadPort = parseConfigInt(process.env.LIVERELOAD_PORT) || 35729;
 
 var config = {
   all: {
-    port: process.env.PORT || 3000
+    bcryptCost: parseConfigInt(process.env.DOA_BCRYPT_COST) || 10,
+    port: parseConfigInt(process.env.PORT) || 3000
   },
 
   development: {
@@ -37,3 +38,16 @@ module.exports = _.extend(config.all, config[env], {
     return path.join.apply(path, [ root ].concat(parts));
   }
 });
+
+function parseConfigInt(value) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  var parsed = parseInt(value, 10);
+  if (_.isNaN(parsed)) {
+    throw new Error(value + ' is not a valid integer');
+  }
+
+  return parsed;
+}

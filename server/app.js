@@ -5,6 +5,8 @@ var _ = require('lodash'),
     log4js = require('log4js'),
     path = require('path');
 
+require('./promisify');
+
 var app = express(),
     config = require(path.join(__dirname, '..', 'config'));
 
