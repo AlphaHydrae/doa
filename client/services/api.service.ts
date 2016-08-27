@@ -1,13 +1,14 @@
 import * as _ from 'lodash';
 import { Injectable } from '@angular/core';
 import { Headers, Http, RequestOptions, Response, URLSearchParams } from '@angular/http';
+import { SlimLoadingBarService } from 'ng2-slim-loading-bar';
 
 @Injectable()
 export class ApiService {
 
   public authToken: string;
 
-  constructor(private _http: Http) {
+  constructor(private _http: Http, private slimLoader: SlimLoadingBarService) {
   }
 
   http(options: any) {
@@ -38,7 +39,11 @@ export class ApiService {
       search: query
     }));
 
-    return this._http[method.toLowerCase()].apply(this._http, args);
+    this.slimLoader.height = '4px';
+    this.slimLoader.start();
+    return this._http[method.toLowerCase()].apply(this._http, args).finally(() => {
+      this.slimLoader.complete();
+    });
   }
 
   extractData(res) {

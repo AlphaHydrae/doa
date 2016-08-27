@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { BrowserModule, Title } from '@angular/platform-browser';
+import { SlimLoadingBarService } from 'ng2-slim-loading-bar';
 
 import { AppComponent } from './app.component';
 import { routing } from './app.routing';
@@ -32,6 +33,7 @@ import { StorageService } from './services/storage.service';
     AuthService,
     ChecksService,
     Logger,
+    SlimLoadingBarService,
     StorageService,
     Title
   ]

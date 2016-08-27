@@ -1,2 +1,4 @@
+ng2-slim-loading-bar
 navbar
-router-outlet
+#content
+  router-outlet

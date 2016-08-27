@@ -6,13 +6,15 @@
     '@angular': 'node_modules/@angular',
     'lodash': 'node_modules/lodash/lodash.js',
     'moment': 'node_modules/moment/moment.js',
-    'rxjs': 'node_modules/rxjs'
+    'rxjs': 'node_modules/rxjs',
+    'ng2-slim-loading-bar': 'node_modules/ng2-slim-loading-bar'
   };
 
   // Packages tells the System loader how to load when no filename and/or no extension.
   var packages = {
     'app': { main: 'main.js',  defaultExtension: 'js' },
-    'rxjs': { defaultExtension: 'js' }
+    'rxjs': { defaultExtension: 'js' },
+    'ng2-slim-loading-bar': { main: 'index.js', defaultExtension: 'js' }
   };
 
   var ngPackageNames = [
