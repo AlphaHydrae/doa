@@ -10,6 +10,7 @@ var liveReloadPort = parseConfigInt(process.env.LIVERELOAD_PORT) || 35729;
 var config = {
   all: {
     bcryptCost: parseConfigInt(process.env.DOA_BCRYPT_COST) || 10,
+    jwtSecret: process.env.DOA_SECRET || 'changeme',
     port: parseConfigInt(process.env.PORT) || 3000
   },
 

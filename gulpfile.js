@@ -2,7 +2,6 @@
 // ============
 
 // TODO: smart livereload
-// TODO: log dist file size
 
 var _ = require('lodash'),
     addSrc = require('gulp-add-src'),

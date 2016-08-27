@@ -10,4 +10,11 @@
     #navbar.collapse.navbar-collapse
       ul.nav.navbar-nav.navbar-right
         li
+          a href='#' on-click='loginDialog.open()' *ngIf='!auth.isSignedIn()'
+            | Sign in
+          a href='#' on-click='auth.signOut()' *ngIf='auth.isSignedIn()'
+            | Sign out
+        li
           a routerLink='/settings' Settings
+
+login-dialog ref-loginDialog=true

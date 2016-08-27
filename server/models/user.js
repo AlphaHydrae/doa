@@ -7,10 +7,13 @@ var _ = require('lodash'),
     uuid = require('uuid'),
     validator = require('validator');
 
+var roles = [ 'user', 'admin' ];
+
 var UserSchema = new Schema({
   apiId: { type: String, unique: true },
   email: { type: String, required: true, maxlength: 50, unique: true },
-  passwordHash: { type: String, default: null }
+  passwordHash: { type: String, default: null },
+  role: { type: String, required: true, enum: roles, default: [ 'user' ] }
 });
 
 UserSchema
@@ -52,13 +55,13 @@ UserSchema.pre('save', function(next) {
 
 UserSchema.statics = {
   parse: function(body) {
-    return _.pick(body, 'email', 'password');
+    return _.pick(body, 'email', 'password', 'role');
   }
 };
 
 UserSchema.methods = {
   serialize: function() {
-    return _.extend(_.pick(this, 'email', 'createdAt', 'updatedAt'), {
+    return _.extend(_.pick(this, 'email', 'createdAt', 'role', 'updatedAt'), {
       id: this.apiId
     });
   }

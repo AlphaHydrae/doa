@@ -1,8 +1,10 @@
 source $HOME/.screenrc
 
-screen -t srv 0
-stuff "gulp dev"
-screen -t vim 1
+screen -t db 0
+stuff "mongo doa\012"
+screen -t srv 1
+stuff "gulp"
+screen -t vim 2
 stuff "\${PROJECT_EDITOR-\$EDITOR}\012"
-screen -t zsh 2
+screen -t zsh 3
 select vim

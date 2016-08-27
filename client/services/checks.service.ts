@@ -1,8 +1,9 @@
 import { Control } from '@angular/common';
 import { Injectable } from '@angular/core';
-import { Headers, Http, RequestOptions, Response, URLSearchParams } from '@angular/http';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
+
+import { ApiService } from './api.service';
 
 @Injectable()
 export class ChecksService {
@@ -10,16 +11,18 @@ export class ChecksService {
   private checksSub: BehaviorSubject<Object[]> = new BehaviorSubject([]);
   public checksObs: Observable<Object[]> = this.checksSub.asObservable();
 
-  constructor(private http: Http) {
+  constructor(private api: ApiService) {
     this.refreshChecks();
   }
 
   createCheck(data) {
 
-    let headers = new Headers({ 'Content-Type': 'application/json' });
-    let options = new RequestOptions({ headers: headers });
+    let obs = this.api.http({
+      method: 'POST',
+      path: '/checks',
+      data: data
+    }).cache().map(this.extractData);
 
-    let obs = this.http.post('/api/checks', JSON.stringify(data), options).cache().map(this.extractData);
     obs.subscribe(check => {
 
       var checks = this.checksSub.getValue();
@@ -33,7 +36,10 @@ export class ChecksService {
 
   refreshChecks() {
 
-    let obs = this.http.get('/api/checks').cache().map(this.extractData);
+    let obs = this.api.http({
+      path: '/checks'
+    }).cache().map(this.extractData);
+
     obs.subscribe(checks => {
       this.checksSub.next(this.checksSub.getValue().concat(checks));
     });
@@ -43,7 +49,11 @@ export class ChecksService {
 
   deleteCheck(check) {
 
-    let obs = this.http.delete('/api/checks/' + check.id).cache().map(this.returnData(check));
+    let obs = this.api.http({
+      method: 'DELETE',
+      path: '/checks/' + check.id
+    }).cache().map(this.returnData(check));
+
     obs.subscribe(check => {
 
       let checks: Object[] = this.checksSub.getValue();
@@ -56,12 +66,11 @@ export class ChecksService {
   }
 
   validateTitleAvailable(control: Control): {[key: string]: any} {
-
-    let query = new URLSearchParams();
-    query.set('title', control.value);
-
-    return this.http.get('/api/checks', {
-      search: query
+    return this.api.http({
+      url: '/api/checks',
+      query: {
+        title: control.value
+      }
     }).map(this.extractData).map(checks => {
       if (!checks.length) {
         return;

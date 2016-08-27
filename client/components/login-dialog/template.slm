@@ -1,0 +1,21 @@
+.modal.fade bsModal=true tabindex='-1' role='dialog' aria-hidden='true'
+  .modal-dialog
+    .modal-content
+      .modal-header
+        h4.modal-title Login
+      form bind-formGroup='loginForm' *ngIf='loginForm'
+        .modal-body
+          .form-group bind-ngClass='{"has-error": loginForm.controls.email.dirty && loginForm.controls.email.invalid}'
+            label.control-label for='user-email' E-mail
+            input#user-email.form-control type='text' placeholder='Your e-mail' formControlName='email' name='email'
+            .help-block *ngIf='loginForm.controls.email.dirty && loginForm.controls.email.invalid && loginForm.controls.email.errors.required'
+              | E-mail cannot be blank.
+          .form-group bind-ngClass='{"has-error": loginForm.controls.password.dirty && loginForm.controls.password.invalid}'
+            label.control-label for='user-password' Password
+            input#user-password.form-control type='password' placeholder='Your e-mail' formControlName='password' name='password'
+            .help-block *ngIf='loginForm.controls.password.dirty && loginForm.controls.password.invalid && loginForm.controls.password.errors.required'
+              | Password cannot be blank.
+        .modal-footer
+          .btn-group.pull-right
+            button.btn.btn-default type='button' on-click='close()' Cancel
+            button.btn.btn-primary type='submit' bind-disabled='loginForm.invalid || loginForm.pending' on-click='signIn()' Save
