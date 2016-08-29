@@ -4,6 +4,16 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
+
+const INTERVALS: Array<Number> = [
+  5,
+  15,
+  60,
+  1440,
+  10080,
+  43200
+];
 
 @Injectable()
 export class ChecksService {
@@ -11,8 +21,12 @@ export class ChecksService {
   private checksSub: BehaviorSubject<Object[]> = new BehaviorSubject([]);
   public checksObs: Observable<Object[]> = this.checksSub.asObservable();
 
-  constructor(private api: ApiService) {
+  constructor(private auth: AuthService, private api: ApiService) {
     this.refreshChecks();
+  }
+
+  get intervals(): Array<Number> {
+    return INTERVALS;
   }
 
   createCheck(data) {
@@ -80,6 +94,14 @@ export class ChecksService {
         titleAvailable: true
       };
     });
+  }
+
+  canCreate(): Boolean {
+    return this.auth.hasRole('admin');
+  }
+
+  canDelete(check): Boolean {
+    return this.auth.hasRole('admin');
   }
 
   private extractData(res) {

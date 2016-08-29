@@ -1,0 +1,10 @@
+.btn-group.pull-right dropdown=true *ngIf='checksService.canDelete(check)'
+  button.btn.btn-default.btn-xs dropdownToggle=true
+    span.glyphicon.glyphicon-cog
+  ul.dropdown-menu role='menu' dropdownMenu=true
+    li role='menuitem'
+      a.dropdown-item href='#' on-click='delete(check)'
+        span.text-danger
+          span.glyphicon.glyphicon-trash>
+          | Delete
+| {{ check.title }}

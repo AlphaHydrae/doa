@@ -30,6 +30,9 @@ export class CreateCheckDialogComponent implements OnInit {
           Validators.maxLength(50)
         ]),
         this.checksService.validateTitleAvailable.bind(this.checksService)
+      ],
+      interval: [
+        this.checksService.intervals[0]
       ]
     });
   }

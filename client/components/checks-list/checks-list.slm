@@ -1,0 +1,3 @@
+p *ngIf='checks | async | empty' No check defined.
+ul.list-group *ngIf='checks | async | present'
+  li.list-group-item.clearfix check-list-item=true *ngFor='let check of checks | async' bind-check='check'

@@ -7,6 +7,7 @@
     'lodash': 'node_modules/lodash/lodash.js',
     'moment': 'node_modules/moment/moment.js',
     'rxjs': 'node_modules/rxjs',
+    'angular2-moment': 'node_modules/angular2-moment',
     'ng2-slim-loading-bar': 'node_modules/ng2-slim-loading-bar'
   };
 
@@ -14,6 +15,7 @@
   var packages = {
     'app': { main: 'main.js',  defaultExtension: 'js' },
     'rxjs': { defaultExtension: 'js' },
+    'angular2-moment': { main: 'index.js', defaultExtension: 'js' },
     'ng2-slim-loading-bar': { main: 'index.js', defaultExtension: 'js' }
   };
 

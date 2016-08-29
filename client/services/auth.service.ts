@@ -40,12 +40,19 @@ export class AuthService {
     }
 
     var email = this.data.user.email;
+
     this.data = undefined;
+    this.saveAuthData();
+
     this.log.debug('User ' + email + ' logged out');
   }
 
-  isSignedIn() {
+  isSignedIn(): Boolean {
     return !_.isNil(this.data);
+  }
+
+  hasRole(role: String): Boolean {
+    return this.isSignedIn() && this.data.user.role === role;
   }
 
   private loadAuthData() {

@@ -5,6 +5,7 @@ var auth = require('../../lib/auth'),
 
 router.post('/', auth.authenticate(), controller.create);
 router.get('/', controller.retrieveAll);
-router.delete('/:id', controller.fetchRecord, controller.destroy);
+router.post('/:id/ping', auth.authenticate(), controller.fetchRecord, controller.ping);
+router.delete('/:id', auth.authenticate(), controller.fetchRecord, controller.destroy);
 
 module.exports = router;

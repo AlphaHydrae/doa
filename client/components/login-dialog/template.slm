@@ -12,7 +12,7 @@
               | E-mail cannot be blank.
           .form-group bind-ngClass='{"has-error": loginForm.controls.password.dirty && loginForm.controls.password.invalid}'
             label.control-label for='user-password' Password
-            input#user-password.form-control type='password' placeholder='Your e-mail' formControlName='password' name='password'
+            input#user-password.form-control type='password' placeholder='Your password' formControlName='password' name='password'
             .help-block *ngIf='loginForm.controls.password.dirty && loginForm.controls.password.invalid && loginForm.controls.password.errors.required'
               | Password cannot be blank.
         .modal-footer

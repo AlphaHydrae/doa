@@ -37,6 +37,25 @@ exports.retrieveAll = function(req, res) {
 };
 
 /**
+ * POST /api/checks/:id/ping
+ */
+exports.ping = function(req, res) {
+
+  var now = new Date();
+
+  var updates = {
+    checkedAt: now
+  };
+
+  Check.update({ _id: req.record.id }, { $set: updates }).exec().then(function() {
+    res.json({
+      checkId: req.record.apiId,
+      createdAt: now
+    });
+  }).catch(errors.handler(res));
+};
+
+/**
  * DELETE /api/checks/:id
  */
 exports.destroy = function(req, res) {

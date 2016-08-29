@@ -7,11 +7,16 @@
         .modal-body
           .form-group bind-ngClass='{"has-error": checkForm.controls.title.dirty && checkForm.controls.title.invalid}'
             label.control-label for='check-title' Title
-            input#check-title.form-control type='text' placeholder='What do you want to check?' formControlName='title' name='title'
+            input#check-title.form-control type='text' placeholder='What do you want to check?' formControlName='title'
             .help-block *ngIf='checkForm.controls.title.dirty && checkForm.controls.title.invalid && checkForm.controls.title.errors.required'
               | Title cannot be blank.
             .help-block *ngIf='checkForm.controls.title.dirty && checkForm.controls.title.invalid && checkForm.controls.title.errors.titleAvailable'
               | Title is already taken.
+          .form-group bind-ngClass='{"has-error": checkForm.controls.interval.dirty && checkForm.controls.interval.invalid}'
+            label.control-label for='check-interval' Interval
+            select#check-interval.form-control formControlName='interval'
+              option *ngFor='let interval of checksService.intervals' value='{{ interval }}'
+                | {{ interval | amDuration: 'minutes' }}
         .modal-footer
           .btn-group.pull-right
             button.btn.btn-default type='button' on-click='close()' Cancel
