@@ -59,10 +59,10 @@ var logAssetsDebounced = _.debounce(function(req, res ,next) {
   groupedCount = 0;
 }, 1000);
 
-app.use(favicon(config.path('dev', 'favicon.ico')));
+app.use(favicon(path.join(config.buildDir, 'favicon.ico')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(config.path('dev')));
+app.use(express.static(config.buildDir));
 app.use('/node_modules', express.static(config.path('node_modules')));
 
 app.use('/api', require('./api'));
@@ -72,7 +72,7 @@ require('./db');
 var router = express.Router();
 
 function serveIndex(req, res) {
-  res.sendFile('index.html', { root: config.path('dev') });
+  res.sendFile('index.html', { root: config.buildDir });
 }
 
 router.all('/api/*', function(req, res) {

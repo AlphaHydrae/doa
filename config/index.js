@@ -11,7 +11,9 @@ var config = {
   all: {
     bcryptCost: parseConfigInt(process.env.DOA_BCRYPT_COST) || 10,
     jwtSecret: process.env.DOA_SECRET || 'changeme',
-    port: parseConfigInt(process.env.PORT) || 3000
+    port: parseConfigInt(process.env.PORT) || 3000,
+    buildDir: path.join(root, 'build', env),
+    tmpDir: path.join(root, 'tmp', env)
   },
 
   development: {

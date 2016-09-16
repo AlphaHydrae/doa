@@ -3,7 +3,7 @@ source $HOME/.screenrc
 screen -t db 0
 stuff "mongo doa\012"
 screen -t srv 1
-stuff "gulp"
+stuff "gulp\012"
 screen -t vim 2
 stuff "\${PROJECT_EDITOR-\$EDITOR}\012"
 screen -t zsh 3
