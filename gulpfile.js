@@ -81,10 +81,7 @@ var src = {
   rawJs: { files: '**/*.js', cwd: 'client' },
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
-  main: { files: function() {
-    var config = getConfig();
-    return path.join(config.env == 'production' ? config.tmpDir : config.buildDir, 'assets/main.js');
-  } },
+  main: { files: _.partial(getSingleFilePath, 'assets/main.js') },
   prodJs: { files: [].concat(files.js).concat(files.prodJs) }
 };
 
@@ -141,19 +138,9 @@ gulp.task('copy:favicon', function() {
 });
 
 gulp.task('copy:js', function() {
-
-  var config = getConfig();
-
-  var dest = config.buildDir;
-  if (config.env == 'production') {
-    dest = config.tmpDir;
-  }
-
-  dest = path.join(dest, 'assets');
-
   return gulpifySrc(src.rawJs)
     .pipe(logProcessedFiles())
-    .pipe(gulp.dest(dest));
+    .pipe(gulp.dest(getSingleFilesDir('assets')));
 });
 
 gulp.task('copy', [ 'copy:favicon', 'copy:js' ]);
@@ -204,19 +191,9 @@ gulp.task('styl', function() {
 });
 
 gulp.task('ts', function() {
-
-  var config = getConfig();
-
-  var dest = config.buildDir;
-  if (config.env == 'production') {
-    dest = config.tmpDir;
-  }
-
-  dest = path.join(dest, 'assets');
-
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
-    .pipe(gulp.dest(dest));
+    .pipe(gulp.dest(getSingleFilesDir('assets')));
 });
 
 gulp.task('compile', sequence('clean:dev', [ 'copy', 'ts', 'slm:templates', 'styl' ], 'slm:index'));
@@ -369,6 +346,15 @@ function getConfig() {
   }
 
   return _config;
+}
+
+function getSingleFilesDir(dir) {
+  var config = getConfig();
+  return path.normalize(path.join(config.env == 'production' ? config.tmpDir : config.buildDir, dir || '.'));
+}
+
+function getSingleFilePath(relativePath) {
+  return path.join(getSingleFilesDir(), relativePath);
 }
 
 function toBuild(dir) {
