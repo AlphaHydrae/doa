@@ -14,6 +14,7 @@ var _ = require('lodash'),
     fs = require('fs'),
     getFolderSize = require('get-folder-size'),
     gulp = require('gulp'),
+    gulpIf = require('gulp-if'),
     inject = require('gulp-inject'),
     livereload = require('gulp-livereload'),
     nodemon = require('gulp-nodemon'),
@@ -27,6 +28,7 @@ var _ = require('lodash'),
     through = require('through2'),
     ts = require('gulp-typescript'),
     uglify = require('gulp-uglify'),
+    useref = require('gulp-useref'),
     util = require('gulp-util'),
     watch = require('gulp-watch'),
     webpack = require('webpack-stream');
@@ -51,24 +53,14 @@ var logProcessedFiles = _.partial(logUtils.processedFiles, function() {
 
 // TODO: extract to watched file
 var files = {
-  js: [
-    'node_modules/core-js/client/shim.js',
-    'node_modules/zone.js/dist/zone.js',
-    'node_modules/reflect-metadata/Reflect.js',
-    'node_modules/systemjs/dist/system.src.js',
-    'node_modules/lodash/lodash.js',
-    'node_modules/ng2-bootstrap/bundles/ng2-bootstrap.js'
-  ],
+  js: [],
   devJs: [
     'build/development/assets/system.js'
   ],
   prodJs: [
     'tmp/production/bundle.js'
   ],
-  css: [
-    'node_modules/bootstrap/dist/css/bootstrap.css',
-    'node_modules/bootstrap/dist/css/bootstrap-theme.css'
-  ],
+  css: [],
   devCss: [
     'build/development/assets/**/*.css'
   ]
@@ -76,6 +68,7 @@ var files = {
 
 var src = {
   index: { files: 'index.slm', cwd: 'client' },
+  compiledIndex: function() { return { files: 'index.html', cwd: getBuildDir() }; },
   templates: { files: [ '*/**/*.slm', 'app.template.slm' ], cwd: 'client' },
   favicon: { files: 'client/favicon.ico' },
   rawJs: { files: '**/*.js', cwd: 'client' },
@@ -248,8 +241,8 @@ gulp.task('prod:css', function() {
     .pipe(pipeCompileStylus())
     .pipe(addSrc.prepend(files.css))
     .pipe(concat('app.css'))
-    .pipe(logUtils.storeInitialSize('css'))
-    .pipe(cssmin())
+    //.pipe(logUtils.storeInitialSize('css'))
+    //.pipe(cssmin())
     .pipe(toBuild('assets'));
 });
 
@@ -269,8 +262,8 @@ gulp.task('webpack', [ 'ts' ], function() {
 gulp.task('prod:js', [ 'webpack' ], function() {
   return gulpifySrc(src.prodJs)
     .pipe(concat('app.js'))
-    .pipe(logUtils.storeInitialSize('js'))
-    .pipe(uglify())
+    //.pipe(logUtils.storeInitialSize('js'))
+    //.pipe(uglify())
     .pipe(toBuild('assets'));
 });
 
@@ -279,12 +272,28 @@ gulp.task('prod:index', function() {
     .pipe(pipeSlm())
     .pipe(pipeAutoInjectFactory())
     .pipe(logUtils.storeInitialSize('html'))
-    .pipe(removeHtmlComments())
+    //.pipe(removeHtmlComments())
     .pipe(toBuild());
 });
 
 gulp.task('prod:favicon', function() {
   return gulpifySrc(src.favicon)
+    .pipe(toBuild());
+});
+
+gulp.task('prod:useref', function() {
+  return gulpifySrc(src.compiledIndex)
+    .pipe(useref())
+    .pipe(through.obj(function(file, enc, cb) {
+      console.log('@@@@@@@@@@@');
+      console.log(file.path);
+      if (file.path.match(/\.html$/)) {
+        console.log(file.contents.toString());
+      }
+      cb(null, file);
+    }))
+    .pipe(gulpIf('*.js', uglify()))
+    .pipe(gulpIf('*.css', cssmin()))
     .pipe(toBuild());
 });
 
@@ -346,6 +355,11 @@ function getConfig() {
   }
 
   return _config;
+}
+
+function getBuildDir(dir) {
+  var config = getConfig();
+  return path.normalize(path.join(config.buildDir, dir || '.'));
 }
 
 function getSingleFilesDir(dir) {

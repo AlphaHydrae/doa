@@ -7,15 +7,27 @@ html
 
     meta name='viewport' content='width=device-width initial-scale=1'
 
+    /! build:css assets/prod.css
+    link rel='stylesheet' href='/node_modules/bootstrap/dist/css/bootstrap.css'
+    link rel='stylesheet' href='/node_modules/bootstrap/dist/css/bootstrap-theme.css'
     /! inject:css
     /! endinject
+    /! endbuild
   body
 
     app
       p Loading...
 
+    /! build:js assets/prod.js
+    script src='/node_modules/core-js/client/shim.js'
+    script src='/node_modules/zone.js/dist/zone.js'
+    script src='/node_modules/reflect-metadata/Reflect.js'
+    script src='/node_modules/systemjs/dist/system.src.js'
+    script src='/node_modules/lodash/lodash.js'
+    script src='/node_modules/ng2-bootstrap/bundles/ng2-bootstrap.js'
     /! inject:js
     /! endinject
+    /! endbuild
 
     - if this.liveReloadUrl
       script src=this.liveReloadUrl
