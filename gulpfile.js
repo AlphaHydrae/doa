@@ -15,6 +15,8 @@ var _ = require('lodash'),
     getFolderSize = require('get-folder-size'),
     gulp = require('gulp'),
     gulpIf = require('gulp-if'),
+    htmlmin = require('gulp-htmlmin'),
+    htmlPrettify = require('gulp-html-prettify'),
     inject = require('gulp-inject'),
     livereload = require('gulp-livereload'),
     nodemon = require('gulp-nodemon'),
@@ -163,6 +165,7 @@ gulp.task('slm:templates', function() {
   return gulpifySrc(src.templates)
     .pipe(logProcessedFiles('html'))
     .pipe(pipeSlm())
+    .pipe(pipePrettifyHtml())
     .pipe(toBuild());
 });
 
@@ -196,6 +199,7 @@ gulp.task('watch:slm:templates', function() {
     return changedFileSrc(file, 'client')
       .pipe(logProcessedFiles('html'))
       .pipe(pipeSlm())
+      .pipe(pipePrettifyHtml())
       .pipe(toBuild());
   });
 });
@@ -230,23 +234,75 @@ gulp.task('dev', sequence('clean:dev', 'compile', [ 'nodemon', 'watch' ]));
 // Production Tasks
 // ----------------
 
+gulp.task('prod:css', [ 'prod:env' ], function() {
+  return gulpifySrc(src.styl)
+    .pipe(pipeCompileStylus())
+    .pipe(addSrc.prepend(files.css))
+    .pipe(concat('app.css'))
+    .pipe(toBuild('assets'));
+});
+
 gulp.task('prod:env', function() {
   env.set({
     NODE_ENV: 'production'
   });
 });
 
-gulp.task('prod:css', function() {
-  return gulpifySrc(src.styl)
-    .pipe(pipeCompileStylus())
-    .pipe(addSrc.prepend(files.css))
-    .pipe(concat('app.css'))
-    //.pipe(logUtils.storeInitialSize('css'))
-    //.pipe(cssmin())
+gulp.task('prod:favicon', function() {
+  return gulpifySrc(src.favicon)
+    .pipe(toBuild());
+});
+
+gulp.task('prod:index', [ 'prod:css', 'prod:js' ], function() {
+  return gulpifySrc(src.index)
+    .pipe(pipeSlm())
+    .pipe(pipeAutoInjectFactory())
+    .pipe(pipePrettifyHtml())
+    .pipe(logUtils.storeInitialSize('html'))
+    .pipe(toBuild());
+});
+
+gulp.task('prod:js', [ 'prod:webpack' ], function() {
+  return gulpifySrc(src.prodJs)
+    .pipe(concat('app.js'))
     .pipe(toBuild('assets'));
 });
 
-gulp.task('webpack', [ 'ts' ], function() {
+gulp.task('prod:minify:css', [ 'prod:useref' ], function() {
+  return gulpifySrc({ files: '**/*.css', cwd: getBuildDir() })
+    .pipe(logUtils.storeInitialSize('css'))
+    .pipe(cssmin())
+    .pipe(toBuild());
+});
+
+gulp.task('prod:minify:html', [ 'prod:useref' ], function() {
+  return gulpifySrc({ files: '**/*.html', cwd: getBuildDir() })
+    .pipe(logUtils.storeInitialSize('html'))
+    .pipe(htmlmin({
+      collapseWhitespace: true,
+      removeComments: true
+    }))
+    .pipe(toBuild());
+})
+
+gulp.task('prod:minify:js', [ 'prod:useref' ], function() {
+  return gulpifySrc({ files: '**/*.js', cwd: getBuildDir() })
+    .pipe(logUtils.storeInitialSize('js'))
+    .pipe(uglify())
+    .pipe(toBuild());
+});
+
+gulp.task('prod:minify', sequence([ 'prod:minify:css', 'prod:minify:html', 'prod:minify:js' ]));
+
+gulp.task('prod:useref', [ 'prod:index' ], function() {
+  return gulpifySrc(src.compiledIndex)
+    .pipe(useref({
+      searchPath: [ 'build/production', '.' ]
+    }))
+    .pipe(toBuild());
+});
+
+gulp.task('prod:webpack', [ 'copy:js', 'ts' ], function() {
 
   var config = getConfig();
 
@@ -259,45 +315,7 @@ gulp.task('webpack', [ 'ts' ], function() {
     .pipe(gulp.dest(config.tmpDir));
 });
 
-gulp.task('prod:js', [ 'webpack' ], function() {
-  return gulpifySrc(src.prodJs)
-    .pipe(concat('app.js'))
-    //.pipe(logUtils.storeInitialSize('js'))
-    //.pipe(uglify())
-    .pipe(toBuild('assets'));
-});
-
-gulp.task('prod:index', function() {
-  return gulpifySrc(src.index)
-    .pipe(pipeSlm())
-    .pipe(pipeAutoInjectFactory())
-    .pipe(logUtils.storeInitialSize('html'))
-    //.pipe(removeHtmlComments())
-    .pipe(toBuild());
-});
-
-gulp.task('prod:favicon', function() {
-  return gulpifySrc(src.favicon)
-    .pipe(toBuild());
-});
-
-gulp.task('prod:useref', function() {
-  return gulpifySrc(src.compiledIndex)
-    .pipe(useref())
-    .pipe(through.obj(function(file, enc, cb) {
-      console.log('@@@@@@@@@@@');
-      console.log(file.path);
-      if (file.path.match(/\.html$/)) {
-        console.log(file.contents.toString());
-      }
-      cb(null, file);
-    }))
-    .pipe(gulpIf('*.js', uglify()))
-    .pipe(gulpIf('*.css', cssmin()))
-    .pipe(toBuild());
-});
-
-gulp.task('prod', sequence('prod:env', 'clean:prod', 'copy:js', [ 'prod:css', 'prod:favicon', 'prod:js' ], 'prod:index', 'build:size'));
+gulp.task('prod', sequence('prod:env', 'clean:prod', [ 'prod:favicon', 'prod:minify' ], 'build:size'));
 
 // Default Task
 // ------------
@@ -345,6 +363,15 @@ function pipeSlm() {
   })();
 }
 
+function pipePrettifyHtml() {
+  return chain(function(stream) {
+    return stream
+      .pipe(htmlPrettify({
+        indent_size: 2
+      }));
+  })();
+}
+
 // Utility functions
 // -----------------
 
@@ -355,6 +382,14 @@ function getConfig() {
   }
 
   return _config;
+}
+
+function getConfigPath() {
+
+  var config = getConfig(),
+      args = Array.prototype.slice.call(arguments);
+
+  return args.length ? config.path.apply(config, args) : config.root;
 }
 
 function getBuildDir(dir) {
