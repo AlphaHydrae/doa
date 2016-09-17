@@ -10,6 +10,7 @@ var _ = require('lodash'),
     concat = require('gulp-concat'),
     cssmin = require('gulp-cssmin'),
     env = require('gulp-env'),
+    filter = require('gulp-filter'),
     fs = require('fs'),
     getFolderSize = require('get-folder-size'),
     gulp = require('gulp'),
@@ -22,7 +23,8 @@ var _ = require('lodash'),
     path = require('path'),
     prettyBytes = require('pretty-bytes'),
     rev = require('gulp-rev'),
-    removeHtmlComments = require('gulp-remove-html-comments'),
+    revDeleteOriginal = require('gulp-rev-delete-original'),
+    revReplace = require('gulp-rev-replace'),
     runSequence = require('run-sequence'),
     slm = require('slm'),
     stylus = require('gulp-stylus'),
@@ -56,6 +58,7 @@ var src = {
   rawJs: { files: '**/*.js', cwd: 'client' },
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
+  prodBuild: { files: '**/*', cwd: 'build/production' },
   prodMain: { files: 'tmp/production/assets/main.js' },
   prodJs: { files: 'tmp/production/bundle.js' }
 };
@@ -69,6 +72,10 @@ var injections = {
     js: [ 'build/production/assets/**/*.js' ],
     css: [ 'build/production/assets/**/*.css' ]
   }
+};
+
+var filters = {
+  rev: filter([ 'assets/**/*' ], { restore: true })
 };
 
 // Cleanup Tasks
@@ -208,6 +215,8 @@ gulp.task('dev', sequence('clean:dev', 'dev:compile', [ 'dev:nodemon', 'dev:watc
 // Production Tasks
 // ----------------
 
+gulp.task('prod:build:unreved', [ 'prod:favicon', 'prod:minify' ]);
+
 gulp.task('prod:copy:js', [ 'prod:env' ], function() {
   return gulpifySrc(src.rawJs)
     .pipe(gulp.dest(getTmpDir('assets')));
@@ -275,6 +284,25 @@ gulp.task('prod:minify:js', [ 'prod:useref' ], function() {
 
 gulp.task('prod:minify', sequence([ 'prod:minify:css', 'prod:minify:html', 'prod:minify:js' ]));
 
+gulp.task('prod:rev', [ 'prod:build:unreved' ], function() {
+
+  function relativeToAbsolutePath(filename) {
+    return '/' + filename;
+  }
+
+  return gulpifySrc(src.prodBuild)
+    .pipe(filters.rev)
+    .pipe(rev())
+    .pipe(revDeleteOriginal())
+    .pipe(toBuild())
+    .pipe(filters.rev.restore)
+    .pipe(revReplace({
+      modifyUnreved: relativeToAbsolutePath,
+      modifyReved: relativeToAbsolutePath
+    }))
+    .pipe(toBuild());
+});
+
 gulp.task('prod:ts', [ 'prod:env' ], function() {
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
@@ -299,7 +327,7 @@ gulp.task('prod:webpack', [ 'prod:copy:js', 'prod:ts' ], function() {
     .pipe(gulp.dest(getTmpDir()));
 });
 
-gulp.task('prod', sequence('prod:env', 'clean:prod', [ 'prod:favicon', 'prod:minify' ], 'build:size'));
+gulp.task('prod', sequence('prod:env', 'clean:prod', 'prod:rev', 'build:size'));
 
 // Default Task
 // ------------
@@ -395,13 +423,8 @@ function toDevBuild(dir) {
 }
 
 function toBuild(dir) {
-
   var dest = path.normalize(path.join(config.buildDir, dir || '.'))
-
-  return chain(function(stream) {
-    return stream
-      .pipe(gulp.dest(dest));
-  })();
+  return gulp.dest(dest);
 }
 
 function logBuildFiles() {
