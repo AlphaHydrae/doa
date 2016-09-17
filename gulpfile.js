@@ -4,7 +4,6 @@
 // TODO: smart livereload
 
 var _ = require('lodash'),
-    addSrc = require('gulp-add-src'),
     autoprefixer = require('gulp-autoprefixer'),
     chain = require('gulp-chain'),
     clean = require('gulp-clean'),
@@ -46,27 +45,8 @@ var logUtils = require('./lib/gulp-log-utils'),
 var gulpifySrc = srcUtils.gulpify,
     watchSrc = srcUtils.watch;
 
-var logProcessedFiles = _.partial(logUtils.processedFiles, function() {
-  return getConfig().buildDir;
-});
-
 // Configuration
 // -------------
-
-// TODO: extract to watched file
-var files = {
-  js: [],
-  devJs: [
-    'build/development/assets/system.js'
-  ],
-  prodJs: [
-    'tmp/production/bundle.js'
-  ],
-  css: [],
-  devCss: [
-    'build/development/assets/**/*.css'
-  ]
-};
 
 var src = {
   index: { files: 'index.slm', cwd: 'client' },
@@ -76,14 +56,14 @@ var src = {
   rawJs: { files: '**/*.js', cwd: 'client' },
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
-  main: { files: _.partial(getSingleFilePath, 'assets/main.js') },
-  prodJs: { files: [].concat(files.js).concat(files.prodJs) }
+  prodMain: { files: 'tmp/production/assets/main.js' },
+  prodJs: { files: 'tmp/production/bundle.js' }
 };
 
 var injections = {
   development: {
-    js: [].concat(files.js).concat(files.devJs),
-    css: [].concat(files.css).concat(files.devCss)
+    js: [ 'build/development/assets/system.js' ],
+    css: [ 'build/development/assets/**/*.css' ]
   },
   production: {
     js: [ 'build/production/assets/**/*.js' ],
@@ -110,9 +90,6 @@ gulp.task('clean', [ 'clean:dev', 'clean:prod' ]);
 // -------------
 
 gulp.task('build:size', function(callback) {
-
-  var config = getConfig();
-
   getFolderSize(config.buildDir, function(err, size) {
     if (err) {
       return callback(err);
@@ -126,21 +103,19 @@ gulp.task('build:size', function(callback) {
 // Development Tasks
 // -----------------
 
-gulp.task('copy:favicon', function() {
-  return gulpifySrc(src.favicon)
-    .pipe(logProcessedFiles())
-    .pipe(toBuild());
-});
-
-gulp.task('copy:js', function() {
+gulp.task('dev:copy:js', function() {
   return gulpifySrc(src.rawJs)
-    .pipe(logProcessedFiles())
-    .pipe(gulp.dest(getSingleFilesDir('assets')));
+    .pipe(logBuildFiles())
+    .pipe(gulp.dest(getBuildDir('assets')));
 });
 
-gulp.task('copy', [ 'copy:favicon', 'copy:js' ]);
+gulp.task('dev:favicon', function() {
+  return gulpifySrc(src.favicon)
+    .pipe(logBuildFiles())
+    .pipe(toDevBuild());
+});
 
-gulp.task('nodemon', function() {
+gulp.task('dev:nodemon', function() {
   livereload.listen();
 
   return nodemon({
@@ -161,83 +136,86 @@ gulp.task('nodemon', function() {
   });
 });
 
-gulp.task('slm:templates', function() {
+gulp.task('dev:slm:templates', function() {
   return gulpifySrc(src.templates)
-    .pipe(logProcessedFiles('html'))
+    .pipe(logBuildFiles('html'))
     .pipe(pipeSlm())
     .pipe(pipePrettifyHtml())
-    .pipe(toBuild());
+    .pipe(toDevBuild());
 });
 
-gulp.task('slm:index', function() {
+gulp.task('dev:slm:index', function() {
   return gulpifySrc(src.index)
-    .pipe(logProcessedFiles('html'))
+    .pipe(logBuildFiles('html'))
     .pipe(pipeSlm())
     .pipe(pipeAutoInjectFactory())
-    .pipe(toBuild());
+    .pipe(pipePrettifyHtml())
+    .pipe(toDevBuild());
 });
 
-gulp.task('slm', [ 'slm:templates', 'slm:index' ]);
-
-gulp.task('styl', function() {
+gulp.task('dev:styl', function() {
   return gulpifySrc(src.styl)
-    .pipe(logProcessedFiles('css', 'assets'))
+    .pipe(logBuildFiles('css', 'assets'))
     .pipe(pipeCompileStylus())
-    .pipe(toBuild('assets'));
+    .pipe(toDevBuild('assets'));
 });
 
-gulp.task('ts', function() {
+gulp.task('dev:ts', function() {
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
-    .pipe(gulp.dest(getSingleFilesDir('assets')));
+    .pipe(gulp.dest(getBuildDir('assets')));
 });
 
-gulp.task('compile', sequence('clean:dev', [ 'copy', 'ts', 'slm:templates', 'styl' ], 'slm:index'));
+gulp.task('dev:compile', sequence('clean:dev', [ 'dev:copy:js', 'dev:favicon', 'dev:ts', 'dev:slm:templates', 'dev:styl' ], 'dev:slm:index'));
 
-gulp.task('watch:slm:templates', function() {
+gulp.task('dev:watch:slm:templates', function() {
   return watchSrc(src.templates, function(file) {
     return changedFileSrc(file, 'client')
-      .pipe(logProcessedFiles('html'))
+      .pipe(logBuildFiles('html'))
       .pipe(pipeSlm())
       .pipe(pipePrettifyHtml())
-      .pipe(toBuild());
+      .pipe(toDevBuild());
   });
 });
 
-gulp.task('watch:slm:index', function() {
+gulp.task('dev:watch:slm:index', function() {
   return watchSrc(src.index, function(file) {
     return changedFileSrc(file, 'client')
-      .pipe(logProcessedFiles('html'))
+      .pipe(logBuildFiles('html'))
       .pipe(pipeSlm())
       .pipe(pipeAutoInjectFactory())
-      .pipe(toBuild());
+      .pipe(toDevBuild());
   });
 });
 
-gulp.task('watch:styl', function() {
+gulp.task('dev:watch:styl', function() {
   return watchSrc(src.styl, function(file) {
     return changedFileSrc(file, 'client')
-      .pipe(logProcessedFiles('css', 'assets'))
+      .pipe(logBuildFiles('css', 'assets'))
       .pipe(pipeCompileStylus())
-      .pipe(toBuild('assets'));
+      .pipe(toDevBuild('assets'));
   });
 });
 
-gulp.task('watch:ts', function() {
-  return gulp.watch('client/**/*.ts', [ 'ts' ]);
+gulp.task('dev:watch:ts', function() {
+  return gulp.watch('client/**/*.ts', [ 'dev:ts' ]);
 });
 
-gulp.task('watch', [ 'watch:slm:templates', 'watch:slm:index', 'watch:styl', 'watch:ts' ]);
+gulp.task('dev:watch', [ 'dev:watch:slm:templates', 'dev:watch:slm:index', 'dev:watch:styl', 'dev:watch:ts' ]);
 
-gulp.task('dev', sequence('clean:dev', 'compile', [ 'nodemon', 'watch' ]));
+gulp.task('dev', sequence('clean:dev', 'dev:compile', [ 'dev:nodemon', 'dev:watch' ]));
 
 // Production Tasks
 // ----------------
 
+gulp.task('prod:copy:js', [ 'prod:env' ], function() {
+  return gulpifySrc(src.rawJs)
+    .pipe(gulp.dest(getTmpDir('assets')));
+});
+
 gulp.task('prod:css', [ 'prod:env' ], function() {
   return gulpifySrc(src.styl)
     .pipe(pipeCompileStylus())
-    .pipe(addSrc.prepend(files.css))
     .pipe(concat('app.css'))
     .pipe(toBuild('assets'));
 });
@@ -248,8 +226,9 @@ gulp.task('prod:env', function() {
   });
 });
 
-gulp.task('prod:favicon', function() {
+gulp.task('prod:favicon', [ 'prod:env' ], function() {
   return gulpifySrc(src.favicon)
+    .pipe(logProductionFiles())
     .pipe(toBuild());
 });
 
@@ -258,7 +237,6 @@ gulp.task('prod:index', [ 'prod:css', 'prod:js' ], function() {
     .pipe(pipeSlm())
     .pipe(pipeAutoInjectFactory())
     .pipe(pipePrettifyHtml())
-    .pipe(logUtils.storeInitialSize('html'))
     .pipe(toBuild());
 });
 
@@ -272,6 +250,7 @@ gulp.task('prod:minify:css', [ 'prod:useref' ], function() {
   return gulpifySrc({ files: '**/*.css', cwd: getBuildDir() })
     .pipe(logUtils.storeInitialSize('css'))
     .pipe(cssmin())
+    .pipe(logProductionFiles())
     .pipe(toBuild());
 });
 
@@ -282,6 +261,7 @@ gulp.task('prod:minify:html', [ 'prod:useref' ], function() {
       collapseWhitespace: true,
       removeComments: true
     }))
+    .pipe(logProductionFiles())
     .pipe(toBuild());
 })
 
@@ -289,10 +269,17 @@ gulp.task('prod:minify:js', [ 'prod:useref' ], function() {
   return gulpifySrc({ files: '**/*.js', cwd: getBuildDir() })
     .pipe(logUtils.storeInitialSize('js'))
     .pipe(uglify())
+    .pipe(logProductionFiles())
     .pipe(toBuild());
 });
 
 gulp.task('prod:minify', sequence([ 'prod:minify:css', 'prod:minify:html', 'prod:minify:js' ]));
+
+gulp.task('prod:ts', [ 'prod:env' ], function() {
+  return gulpifySrc(src.ts)
+    .pipe(pipeCompileTypescript())
+    .pipe(gulp.dest(getTmpDir('assets')));
+});
 
 gulp.task('prod:useref', [ 'prod:index' ], function() {
   return gulpifySrc(src.compiledIndex)
@@ -302,17 +289,14 @@ gulp.task('prod:useref', [ 'prod:index' ], function() {
     .pipe(toBuild());
 });
 
-gulp.task('prod:webpack', [ 'copy:js', 'ts' ], function() {
-
-  var config = getConfig();
-
-  return gulpifySrc(src.main)
+gulp.task('prod:webpack', [ 'prod:copy:js', 'prod:ts' ], function() {
+  return gulpifySrc(src.prodMain)
     .pipe(webpack({
       output: {
         filename: 'bundle.js'
       }
     }))
-    .pipe(gulp.dest(config.tmpDir));
+    .pipe(gulp.dest(getTmpDir()));
 });
 
 gulp.task('prod', sequence('prod:env', 'clean:prod', [ 'prod:favicon', 'prod:minify' ], 'build:size'));
@@ -327,8 +311,6 @@ gulp.task('default', [ 'dev' ]);
 
 function pipeAutoInjectFactory() {
   return chain(function(stream) {
-
-    var config = getConfig()
 
     function autoInject(files) {
       return inject(gulp.src(files, { read: false }), { ignorePath: path.relative(config.root, config.buildDir) });
@@ -384,44 +366,52 @@ function getConfig() {
   return _config;
 }
 
-function getConfigPath() {
-
-  var config = getConfig(),
-      args = Array.prototype.slice.call(arguments);
-
-  return args.length ? config.path.apply(config, args) : config.root;
-}
+var config = {};
+_.each('env root buildDir tmpDir'.split(/\s+/), function(property) {
+  Object.defineProperty(config, property, {
+    get: function () {
+      return getConfig()[property];
+    }
+  });
+});
 
 function getBuildDir(dir) {
-  var config = getConfig();
   return path.normalize(path.join(config.buildDir, dir || '.'));
 }
 
-function getSingleFilesDir(dir) {
-  var config = getConfig();
-  return path.normalize(path.join(config.env == 'production' ? config.tmpDir : config.buildDir, dir || '.'));
+function getTmpDir(dir) {
+  return path.normalize(path.join(config.tmpDir, dir || '.'));
 }
 
-function getSingleFilePath(relativePath) {
-  return path.join(getSingleFilesDir(), relativePath);
+function toDevBuild(dir) {
+
+  var dest = path.normalize(path.join(config.buildDir, dir || '.'));
+
+  return chain(function(stream) {
+    return stream
+      .pipe(gulp.dest(dest))
+      .pipe(livereload());
+  })();
 }
 
 function toBuild(dir) {
 
-  var config = getConfig(),
-      dest = path.normalize(path.join(config.buildDir, dir || '.'))
+  var dest = path.normalize(path.join(config.buildDir, dir || '.'))
 
   return chain(function(stream) {
-    stream = stream.pipe(gulp.dest(dest));
-
-    if (config.env == 'production') {
-      stream = stream.pipe(logUtils.productionFiles(path.relative(config.root, config.buildDir)));
-    } else if (config.env == 'development') {
-      stream = stream.pipe(livereload());
-    }
-
-    return stream;
+    return stream
+      .pipe(gulp.dest(dest));
   })();
+}
+
+function logBuildFiles() {
+  var func = _.partial(logUtils.processedFiles, config.buildDir);
+  return func.apply(undefined, Array.prototype.slice.call(arguments));
+}
+
+function logProductionFiles() {
+  var func = _.partial(logUtils.productionFiles, config.buildDir);
+  return func.apply(undefined, Array.prototype.slice.call(arguments));
 }
 
 function compileSlm(file, enc, cb) {
