@@ -59,7 +59,6 @@ var gulpifySrc = srcUtils.gulpify,
 var src = {
   fonts: { files: 'fonts/**/*', cwd: 'node_modules/bootstrap/dist' },
   index: { files: 'index.slm', cwd: 'client' },
-  compiledIndex: function() { return { files: 'index.html', cwd: getBuildDir() }; },
   templates: { files: [ '**/*.slm', '!index.slm' ], cwd: 'client' },
   favicon: { files: 'client/favicon.ico' },
   less: { files: '**/*.less', cwd: 'client'  },
@@ -67,6 +66,7 @@ var src = {
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
   tsConfig: { files: 'config/config.ts.hbs' },
+  prodIndex: { files: 'index.html', cwd: 'build/production' },
   prodStyl: { files: [ '**/*.styl', '!components/**/*', '!**/*.component.styl' ], cwd: 'client' },
   prodComponentsStyl: { files: [ 'components/**/*.styl', '**/*.component.styl' ], cwd: 'client', base: 'client' },
   prodBuild: { files: '**/*', cwd: 'build/production' },
@@ -209,13 +209,15 @@ gulp.task('dev:styl', function() {
     .pipe(toDevBuild('assets'));
 });
 
-gulp.task('dev:ts', [ 'ts:config' ], function() {
+gulp.task('dev:ts', function() {
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
     .pipe(gulp.dest(getBuildDir('assets')));
 });
 
-gulp.task('dev:compile', sequence('clean:dev', [ 'dev:copy:js', 'dev:favicon', 'dev:fonts', 'dev:less', 'dev:slm:templates', 'dev:styl', 'dev:ts' ], 'dev:slm:index'));
+gulp.task('dev:ts:first', sequence('ts:config', 'dev:ts'));
+
+gulp.task('dev:compile', sequence('clean:dev', [ 'dev:copy:js', 'dev:favicon', 'dev:fonts', 'dev:less', 'dev:slm:templates', 'dev:styl', 'dev:ts:first' ], 'dev:slm:index'));
 
 gulp.task('dev:watch:less', function() {
   return watchSrc(src.less, function(file) {
@@ -412,7 +414,7 @@ gulp.task('prod:ts', [ 'prod:ts:config' ], function() {
 gulp.task('prod:unreved', [ 'prod:favicon', 'prod:fonts', 'prod:minify' ]);
 
 gulp.task('prod:useref', [ 'prod:index' ], function() {
-  return gulpifySrc(src.compiledIndex)
+  return gulpifySrc(src.prodIndex)
     .pipe(useref({
       searchPath: [ 'build/production', '.' ]
     }))

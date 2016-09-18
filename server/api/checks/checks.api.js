@@ -1,16 +1,20 @@
 var _ = require('lodash'),
     Check = require('../../models/check'),
     errors = require('../../lib/errors'),
-    pagination = require('../../lib/pagination');
+    pagination = require('../../lib/pagination'),
+    utils = require('../utils');
 
 /**
  * POST /api/checks
  */
 exports.create = function(req, res) {
 
-  var data = Check.parse(req.body);
+  var data = Check.parse(req.body),
+      record = new Check(data);
 
-  new Check(data).save().then(function(check) {
+  record.user = req.user;
+
+  record.save().then(function(check) {
     res.json(check.serialize());
   }).catch(errors.handler(res));
 };
@@ -18,9 +22,11 @@ exports.create = function(req, res) {
 /**
  * GET /api/checks
  */
-exports.retrieveAll = function(req, res) {
+exports.index = function(req, res) {
 
-  var query = Check.find().sort('createdAt')
+  var query = Check.policy.scope(req)
+    .sort('createdAt')
+    .populate('user');
 
   function filter(query) {
 
@@ -34,6 +40,13 @@ exports.retrieveAll = function(req, res) {
   pagination(req, res, query, filter).then(function(checks) {
     res.json(_.invokeMap(checks, 'serialize'));
   }).catch(errors.handler(res));
+};
+
+/**
+ * GET /api/checks/:id
+ */
+exports.retrieve = function(req, res) {
+  res.json(req.record.serialize());
 };
 
 /**
@@ -64,16 +77,10 @@ exports.destroy = function(req, res) {
   }).catch(errors.handler(res));
 };
 
-exports.fetchRecord = function(req, res, next) {
-  Check
+exports.fetchRecord = _.partial(utils.fetchRecord, function findRecord(id) {
+  return Check
     .findOne()
-    .where('apiId').equals(req.params.id)
-    .exec().then(function(check) {
-      if (!check) {
-        return res.sendStatus(404);
-      }
-
-      req.record = check;
-      next();
-    });
-};
+    .where('apiId').equals(id)
+    .populate('user')
+    .exec();
+});

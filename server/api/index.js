@@ -1,8 +1,24 @@
-var express = require('express'),
+var _ = require('lodash'),
+    config = require('../../config'),
+    express = require('express'),
+    glob = require('glob'),
+    path = require('path'),
     router = express.Router();
 
-router.use('/auth', require('./auth'));
-router.use('/checks', require('./checks'));
-router.use('/users', require('./users'));
+var apiFiles = glob.sync('**/*.api.js', {
+  cwd: __dirname
+});
+
+var logger = config.logger('api');
+
+_.each(apiFiles, function(apiFile) {
+
+  var apiName = path.basename(apiFile).replace(/\..*/, ''),
+      apiRouter = require('./' + apiName + '/' + apiName + '.routes');
+
+  router.use('/' + apiName, apiRouter);
+
+  logger.trace('Registered /' + apiName + ' API routes');
+});
 
 module.exports = router;

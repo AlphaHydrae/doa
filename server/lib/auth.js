@@ -2,45 +2,75 @@ var _ = require('lodash'),
     compose = require('composable-middleware'),
     config = require('../../config'),
     jwt = require('express-jwt'),
-    log4js = require('log4js'),
+    p = require('bluebird'),
     User = require('../models/user');
 
-var logger = log4js.getLogger('auth');
+var logger = config.logger('auth');
 
 exports.authenticate = function(options) {
-  options = _.extend({}, options);
 
-  var required = !!_.get(options, 'required', true);
+  options = _.defaults({}, options, {
+    required: true
+  });
 
   return compose()
-    .use(validateJwt(required))
+    .use(enrichRequest)
+    .use(validateJwt(options.required))
     .use(checkJwtError)
     .use(renameJwt)
-    .use(loadAuthenticatedUser);
+    .use(loadAuthenticatedUser(options.required));
 };
 
-exports.requireRole = function(role) {
-  return function(req, res, next) {
+exports.authorize = function(policy, options) {
+
+  options = _.defaults({}, options, {
+    required: false
+  });
+
+  return compose()
+    .use(exports.authenticate(options))
+    .use(function(req, res, next) {
+      p.resolve().then(_.partial(policy, req)).then(function(authorized) {
+        next(authorized ? undefined : new Error('You are not authorized to perform this action.'))
+      }).catch(next);
+    });
+};
+
+function enrichRequest(req, res, next) {
+  req.authenticated = function() {
+    if (!req.user) {
+      throw new Error('Authentication required');
+    } else {
+      return req.user;
+    }
   };
-};
 
-function loadAuthenticatedUser(req, res, next) {
-  if (!req.jwtToken) {
-    return next();
-  }
+  next();
+}
 
-  User.findOne({ apiId: req.jwtToken.sub }, function(err, user) {
-    if (err) {
-      return next(err);
-    } else if (!user) {
-      return res.sendStatus(401);
+function loadAuthenticatedUser(required) {
+  return function(req, res, next) {
+    if (!req.jwtToken) {
+      return next();
     }
 
-    logger.debug('Authenticated with user ' + user.apiId);
-    req.user = user;
-    next();
-  });
-}
+    User.findOne({ apiId: req.jwtToken.sub }, function(err, user) {
+      if (err) {
+        return next(err);
+      } else if (required && !user) {
+        return res.sendStatus(401);
+      }
+
+      if (user) {
+        logger.debug('Authenticated with user ' + user.apiId);
+
+        req.user = user;
+      }
+
+      next();
+    });
+  };
+};
 
 function renameJwt(req, res, next) {
   if (_.has(req, 'user')) {

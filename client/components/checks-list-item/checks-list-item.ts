@@ -6,7 +6,6 @@ import { ChecksService } from '../../services/checks.service';
 @Component({
   moduleId: module.id.toString(),
   selector: '[check-list-item]',
-  styleUrls: [ 'checks-list-item.css' ],
   templateUrl: 'checks-list-item.html',
   host: {
     '[class.list-group-item-info]': 'infoClass',

@@ -2,6 +2,7 @@ var _ = require('lodash'),
     bcrypt = require('bcryptjs'),
     config = require('../../config'),
     mongoose = require('mongoose'),
+    policy = require('../lib/policy'),
     Schema = mongoose.Schema,
     timestamps = require('mongoose-timestamp'),
     uuid = require('uuid'),
@@ -60,6 +61,10 @@ UserSchema.statics = {
 };
 
 UserSchema.methods = {
+  hasRole: function(role) {
+    return this.role == role;
+  },
+
   serialize: function() {
     return _.extend(_.pick(this, 'email', 'createdAt', 'role', 'updatedAt'), {
       id: this.apiId
@@ -67,4 +72,10 @@ UserSchema.methods = {
   }
 };
 
-module.exports = mongoose.model('User', UserSchema);
+var model = module.exports = mongoose.model('User', UserSchema);
+
+policy(model, {
+  create: function(req) {
+    return req.authenticated().hasRole('admin');
+  }
+});

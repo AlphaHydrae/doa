@@ -1,7 +1,6 @@
 var app = require('./app'),
     config = require('../config'),
-    http = require('http'),
-    log4js = require('log4js');
+    http = require('http');
 
 /**
  * Get port from environment and store in Express.
@@ -50,7 +49,7 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-var logger = log4js.getLogger('app');
+var logger = config.logger('app');
 
 function onListening() {
 

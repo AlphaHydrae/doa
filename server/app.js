@@ -14,7 +14,7 @@ var app = express(),
 app.set('views', config.path('server'));
 app.set('view engine', 'slm');
 
-var logger = log4js.getLogger('express'),
+var logger = config.logger('express'),
     connectLogger = log4js.connectLogger(logger, {
       level: log4js.levels.TRACE,
       format: ':method :url :status :response-time ms'
@@ -105,6 +105,7 @@ app.use(function(req, res, next) {
 // will print stacktrace
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
+    logger.warn(err);
     res.status(err.status || 500);
     res.render('error', {
       message: err.message,

@@ -1,5 +1,6 @@
 var _ = require('lodash'),
     env = process.env.NODE_ENV || 'development',
+    log4js = require('log4js'),
     path = require('path');
 
 var pkg = require(path.join('..', 'package')),
@@ -38,6 +39,10 @@ module.exports = _.extend(config.all, config[env], {
   path: function() {
     var parts = Array.prototype.slice.call(arguments);
     return path.join.apply(path, [ root ].concat(parts));
+  },
+
+  logger: function(name) {
+    return log4js.getLogger(name);
   }
 });
 
