@@ -15,6 +15,7 @@ var _ = require('lodash'),
     getFolderSize = require('get-folder-size'),
     gulp = require('gulp'),
     gulpIf = require('gulp-if'),
+    handlebars = require('gulp-compile-handlebars'),
     htmlmin = require('gulp-htmlmin'),
     htmlPrettify = require('gulp-html-prettify'),
     inject = require('gulp-inject'),
@@ -24,6 +25,7 @@ var _ = require('lodash'),
     nodemon = require('gulp-nodemon'),
     path = require('path'),
     prettyBytes = require('pretty-bytes'),
+    rename = require('gulp-rename'),
     rev = require('gulp-rev'),
     revDeleteOriginal = require('gulp-rev-delete-original'),
     revReplace = require('gulp-rev-replace'),
@@ -62,6 +64,7 @@ var src = {
   rawJs: { files: '**/*.js', cwd: 'client' },
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
+  tsConfig: { files: 'config/config.ts.hbs' },
   prodBuild: { files: '**/*', cwd: 'build/production' },
   prodMain: { files: 'tmp/production/assets/main.js' },
   prodJs: { files: 'tmp/production/bundle.js' }
@@ -109,6 +112,19 @@ gulp.task('build:size', function(callback) {
     util.log(util.colors.blue(path.relative(config.root, config.buildDir), ' - ' + prettyBytes(size)));
     callback();
   });
+});
+
+gulp.task('ts:config', function() {
+  return gulp.src('config/config.ts.hbs')
+    .pipe(handlebars(getConfig(), {
+      helpers: {
+        json: function(value) {
+          return JSON.stringify(value);
+        }
+      }
+    }))
+    .pipe(rename('config.ts'))
+    .pipe(gulp.dest('client'));
 });
 
 // Development Tasks
@@ -184,7 +200,7 @@ gulp.task('dev:styl', function() {
     .pipe(toDevBuild('assets'));
 });
 
-gulp.task('dev:ts', function() {
+gulp.task('dev:ts', [ 'ts:config' ], function() {
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
     .pipe(gulp.dest(getBuildDir('assets')));
@@ -304,6 +320,7 @@ gulp.task('prod:minify:html', [ 'prod:useref' ], function() {
   return gulpifySrc({ files: '**/*.html', cwd: getBuildDir() })
     .pipe(logUtils.storeInitialSize('html'))
     .pipe(htmlmin({
+      caseSensitive: true,
       collapseWhitespace: true,
       removeComments: true
     }))
@@ -314,12 +331,30 @@ gulp.task('prod:minify:html', [ 'prod:useref' ], function() {
 gulp.task('prod:minify:js', [ 'prod:useref' ], function() {
   return gulpifySrc({ files: '**/*.js', cwd: getBuildDir() })
     .pipe(logUtils.storeInitialSize('js'))
-    .pipe(uglify())
+    .pipe(uglify({
+      // TODO: turn mangle back on once the Angular 2 issue is fixed.
+      // https://github.com/mishoo/UglifyJS2/issues/999
+      // https://github.com/angular/angular/issues/6380
+      mangle: false
+    }))
     .pipe(logProductionFiles())
     .pipe(toBuild());
 });
 
 gulp.task('prod:minify', sequence([ 'prod:minify:css', 'prod:minify:html', 'prod:minify:js' ]));
+
+gulp.task('prod:nodemon', function() {
+  return nodemon({
+    script: 'bin/www',
+    ext: 'js',
+    watch: [ 'bin/www', 'config/**/*.js', 'server/**/*.js' ],
+    ignore: [ '.git', 'client', 'node_modules' ],
+    stdout: false
+  }).on('readable', function() {
+    this.stdout.pipe(process.stdout);
+    this.stderr.pipe(process.stderr);
+  });
+});
 
 gulp.task('prod:rev', [ 'prod:unreved' ], function() {
 
@@ -340,13 +375,22 @@ gulp.task('prod:rev', [ 'prod:unreved' ], function() {
     .pipe(toBuild());
 });
 
-gulp.task('prod:ts', [ 'prod:env' ], function() {
+gulp.task('prod:slm:templates', [ 'prod:env' ], function() {
+  return gulpifySrc(src.templates)
+    .pipe(pipeSlm())
+    .pipe(logProductionFiles())
+    .pipe(toBuild());
+});
+
+gulp.task('prod:ts:config', sequence('prod:env', 'ts:config'));
+
+gulp.task('prod:ts', [ 'prod:ts:config' ], function() {
   return gulpifySrc(src.ts)
     .pipe(pipeCompileTypescript())
     .pipe(gulp.dest(getTmpDir('assets')));
 });
 
-gulp.task('prod:unreved', [ 'prod:favicon', 'prod:fonts', 'prod:minify' ]);
+gulp.task('prod:unreved', [ 'prod:favicon', 'prod:fonts', 'prod:minify', 'prod:slm:templates' ]);
 
 gulp.task('prod:useref', [ 'prod:index' ], function() {
   return gulpifySrc(src.compiledIndex)
@@ -366,7 +410,9 @@ gulp.task('prod:webpack', [ 'prod:copy:js', 'prod:ts' ], function() {
     .pipe(gulp.dest(getTmpDir()));
 });
 
-gulp.task('prod', sequence('prod:env', 'clean:prod', 'prod:rev', 'build:size'));
+gulp.task('prod:build', sequence('prod:env', 'clean:prod', 'prod:rev', 'build:size'))
+
+gulp.task('prod', sequence('prod:build', 'prod:nodemon'));
 
 // Default Task
 // ------------

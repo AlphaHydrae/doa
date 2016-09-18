@@ -9,6 +9,7 @@ var liveReloadPort = parseConfigInt(process.env.LIVERELOAD_PORT) || 35729;
 
 var config = {
   all: {
+    db: process.env.DOA_MONGODB_URI || 'mongodb://localhost/doa',
     bcryptCost: parseConfigInt(process.env.DOA_BCRYPT_COST) || 10,
     jwtSecret: process.env.DOA_SECRET || 'changeme',
     port: parseConfigInt(process.env.PORT) || 3000,
@@ -17,7 +18,6 @@ var config = {
   },
 
   development: {
-    db: process.env.DOA_MONGODB_URI || 'mongodb://localhost/doa',
     liveReloadUrl: process.env.LIVERELOAD_URL || 'http://localhost:' + liveReloadPort + '/livereload.js'
   },
 
@@ -26,7 +26,6 @@ var config = {
   },
 
   production: {
-    db: process.env.DOA_MONGODB_URI
   }
 };
 

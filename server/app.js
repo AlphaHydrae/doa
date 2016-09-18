@@ -20,50 +20,58 @@ var logger = log4js.getLogger('express'),
       format: ':method :url :status :response-time ms'
     })
 
-var groupLog = [ /^\/assets\//, /^\/node_modules\// ];
+if (config.env == 'development') {
+  var groupLog = [ /^\/assets\//, /^\/node_modules\// ];
 
-app.use(function(req, res, next) {
+  app.use(function(req, res, next) {
 
-  var group = _.some(groupLog, function(regexp) {
-    return regexp.exec(req.path);
+    var group = _.some(groupLog, function(regexp) {
+      return regexp.exec(req.path);
+    });
+
+    if (group) {
+      logAssets(req, res, next);
+    } else {
+      connectLogger(req, res, next);
+    }
   });
 
-  if (group) {
-    logAssets(req, res, next);
-  } else {
-    connectLogger(req, res, next);
-  }
-});
+  var start = null,
+      groupedCount = 0;
 
-var start = null,
+  function logAssets(req, res, next) {
+
+    if (!start) {
+      start = new Date().getTime();
+    }
+
+    groupedCount++;
+
+    logAssetsDebounced(req, res, next);
+
+    next();
+  }
+
+  var logAssetsDebounced = _.debounce(function(req, res ,next) {
+
+    logger.trace('GET ... (' + groupedCount + ' assets) ' + (new Date().getTime() - start) + ' ms');
+
+    start = null;
     groupedCount = 0;
-
-function logAssets(req, res, next) {
-
-  if (!start) {
-    start = new Date().getTime();
-  }
-
-  groupedCount++;
-
-  logAssetsDebounced(req, res, next);
-
-  next();
+  }, 1000);
+} else {
+  app.use(connectLogger);
 }
-
-var logAssetsDebounced = _.debounce(function(req, res ,next) {
-
-  logger.trace('GET ... (' + groupedCount + ' assets) ' + (new Date().getTime() - start) + ' ms');
-
-  start = null;
-  groupedCount = 0;
-}, 1000);
 
 app.use(favicon(path.join(config.buildDir, 'favicon.ico')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
 app.use(express.static(config.buildDir));
-app.use('/node_modules', express.static(config.path('node_modules')));
+
+if (config.env == 'development') {
+  app.use('/node_modules', express.static(config.path('node_modules')));
+}
 
 app.use('/api', require('./api'));
 

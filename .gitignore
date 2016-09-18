@@ -1,6 +1,7 @@
 /*.swp
 /*.log
 /build
+/client/config.ts
 /client/typings
 /dev
 /dist
