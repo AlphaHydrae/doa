@@ -17,8 +17,10 @@ var _ = require('lodash'),
     gulpIf = require('gulp-if'),
     handlebars = require('gulp-compile-handlebars'),
     htmlmin = require('gulp-htmlmin'),
+    htmlMinifier = require('html-minifier'),
     htmlPrettify = require('gulp-html-prettify'),
     inject = require('gulp-inject'),
+    inlineTemplates = require('gulp-inline-ng2-template'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
     merge = require('merge-stream'),
@@ -93,8 +95,13 @@ gulp.task('clean:dev', function() {
     .pipe(clean());
 });
 
-gulp.task('clean:prod', function() {
-  return gulp.src([ 'build/production/*', 'tmp/production/*' ], { read: false })
+gulp.task('clean:prod:tmp', function() {
+  return gulp.src('tmp/production/*', { read: false })
+    .pipe(clean());
+});
+
+gulp.task('clean:prod', [ 'clean:prod:tmp' ], function() {
+  return gulp.src('build/production/*', { read: false })
     .pipe(clean());
 });
 
@@ -319,11 +326,7 @@ gulp.task('prod:minify:css', [ 'prod:useref' ], function() {
 gulp.task('prod:minify:html', [ 'prod:useref' ], function() {
   return gulpifySrc({ files: '**/*.html', cwd: getBuildDir() })
     .pipe(logUtils.storeInitialSize('html'))
-    .pipe(htmlmin({
-      caseSensitive: true,
-      collapseWhitespace: true,
-      removeComments: true
-    }))
+    .pipe(htmlmin(htmlMinifierOptions()))
     .pipe(logProductionFiles())
     .pipe(toBuild());
 })
@@ -379,13 +382,18 @@ gulp.task('prod:slm:templates', [ 'prod:env' ], function() {
   return gulpifySrc(src.templates)
     .pipe(pipeSlm())
     .pipe(logProductionFiles())
-    .pipe(toBuild());
+    .pipe(gulp.dest(config.tmpDir));
 });
 
-gulp.task('prod:ts:config', sequence('prod:env', 'ts:config'));
+gulp.task('prod:ts:config', sequence('prod:env', [ 'prod:slm:templates', 'ts:config' ]));
 
 gulp.task('prod:ts', [ 'prod:ts:config' ], function() {
   return gulpifySrc(src.ts)
+    .pipe(inlineTemplates({
+      base: 'tmp/production',
+      removeLineBreaks: true,
+      templateProcessor: minifyInlineTemplate
+    }))
     .pipe(pipeCompileTypescript())
     .pipe(gulp.dest(getTmpDir('assets')));
 });
@@ -410,7 +418,7 @@ gulp.task('prod:webpack', [ 'prod:copy:js', 'prod:ts' ], function() {
     .pipe(gulp.dest(getTmpDir()));
 });
 
-gulp.task('prod:build', sequence('prod:env', 'clean:prod', 'prod:rev', 'build:size'))
+gulp.task('prod:build', sequence('prod:env', 'clean:prod', 'prod:rev', 'clean:prod:tmp', 'build:size'))
 
 gulp.task('prod', sequence('prod:build', 'prod:nodemon'));
 
@@ -555,6 +563,22 @@ function compileSlm(file, enc, cb) {
   }
 
   cb(null, file);
+}
+
+function htmlMinifierOptions() {
+  return {
+    caseSensitive: true,
+    collapseWhitespace: true,
+    removeComments: true
+  };
+}
+
+function minifyInlineTemplate(path, ext, file, cb) {
+  try {
+    cb(null, htmlMinifier.minify(file, htmlMinifierOptions()).trim());
+  } catch(err) {
+    cb(err);
+  }
 }
 
 function changedFileSrc(file, base) {
