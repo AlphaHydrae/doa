@@ -24,6 +24,8 @@ var _ = require('lodash'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
     merge = require('merge-stream'),
+    mocha = require('gulp-mocha'),
+    mongoose = require('mongoose'),
     nodemon = require('gulp-nodemon'),
     path = require('path'),
     prettyBytes = require('pretty-bytes'),
@@ -57,6 +59,7 @@ var gulpifySrc = srcUtils.gulpify,
 // -------------
 
 var src = {
+  apiSpecs: { files: '**/*.spec.js', cwd: 'server/api' },
   fonts: { files: 'fonts/**/*', cwd: 'node_modules/bootstrap/dist' },
   index: { files: 'index.slm', cwd: 'client' },
   templates: { files: [ '**/*.slm', '!index.slm' ], cwd: 'client' },
@@ -435,6 +438,24 @@ gulp.task('prod:build', sequence('prod:env', 'clean:prod', 'prod:rev', 'clean:pr
 
 gulp.task('prod', sequence('prod:build', 'prod:nodemon'));
 
+// Test Tasks
+// ----------
+
+gulp.task('test:env', function() {
+  env.set({
+    NODE_ENV: 'test'
+  });
+});
+
+gulp.task('test:api', [ 'test:env' ], function() {
+  return gulpifySrc(src.apiSpecs, { read: false })
+    .pipe(mocha())
+    .on('error', disconnectDatabase)
+    .on('end', disconnectDatabase);
+});
+
+gulp.task('test', sequence([ 'test:api' ]));
+
 // Default Task
 // ------------
 
@@ -607,6 +628,10 @@ function minifyInlineTemplate(path, ext, file, cb) {
   } catch(err) {
     cb(err);
   }
+}
+
+function disconnectDatabase() {
+  mongoose.connection.close();
 }
 
 function changedFileSrc(file, base) {

@@ -63,7 +63,10 @@ if (config.env == 'development') {
   app.use(connectLogger);
 }
 
-app.use(favicon(path.join(config.buildDir, 'favicon.ico')));
+if (config.env != 'test') {
+  app.use(favicon(path.join(config.buildDir, 'favicon.ico')));
+}
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -103,7 +106,7 @@ app.use(function(req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
+if (app.get('env') !== 'production') {
   app.use(function(err, req, res, next) {
     logger.warn(err);
     res.status(err.status || 500);

@@ -1,6 +1,7 @@
 var _ = require('lodash'),
     bcrypt = require('bcryptjs'),
     config = require('../../config'),
+    jwt = require('jsonwebtoken'),
     mongoose = require('mongoose'),
     policy = require('../lib/policy'),
     Schema = mongoose.Schema,
@@ -61,12 +62,18 @@ UserSchema.statics = {
 };
 
 UserSchema.methods = {
+  jwt: function() {
+    return jwt.sign({
+      sub: this.apiId
+    }, config.jwtSecret);
+  },
+
   hasRole: function(role) {
     return this.role == role;
   },
 
   serialize: function() {
-    return _.extend(_.pick(this, 'email', 'createdAt', 'role', 'updatedAt'), {
+    return _.extend(_.pick(this, 'email', 'role', 'createdAt', 'updatedAt'), {
       id: this.apiId
     });
   }

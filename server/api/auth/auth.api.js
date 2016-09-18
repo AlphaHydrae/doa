@@ -1,5 +1,5 @@
 var bcrypt = require('bcryptjs'),
-    jwt = require('jsonwebtoken'),
+    config = require('../../../config'),
     User = require('../../models/user');
 
 exports.authenticate = function(req, res) {
@@ -17,12 +17,8 @@ exports.authenticate = function(req, res) {
         return res.sendStatus(401);
       }
 
-      var token = jwt.sign({
-        sub: user.apiId
-      }, 'changeme');
-
       res.json({
-        token: token,
+        token: user.jwt(),
         user: user.serialize()
       });
     });

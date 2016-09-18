@@ -11,6 +11,6 @@ exports.create = function(req, res) {
   var data = User.parse(req.body);
 
   new User(data).save().then(function(check) {
-    res.json(check.serialize());
+    res.status(201).json(check.serialize());
   }).catch(errors.handler(res));
 };

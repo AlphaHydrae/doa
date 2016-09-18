@@ -15,7 +15,7 @@ exports.create = function(req, res) {
   record.user = req.user;
 
   record.save().then(function(check) {
-    res.json(check.serialize());
+    res.status(201).json(check.serialize());
   }).catch(errors.handler(res));
 };
 
