@@ -5,8 +5,9 @@ import { ChecksService } from '../../services/checks.service';
 import { ChecksListItemComponent } from '../checks-list-item/checks-list-item';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'checks-list',
-  templateUrl: 'components/checks-list/checks-list.html',
+  templateUrl: 'checks-list.html',
   providers: [ ChecksListItemComponent ],
   directives: [ ChecksListItemComponent ]
 })

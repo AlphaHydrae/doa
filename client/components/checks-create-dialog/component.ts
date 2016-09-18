@@ -7,8 +7,9 @@ import { ChecksService } from '../../services/checks.service';
 import { Logger } from '../../services/log.service';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'create-check-dialog',
-  templateUrl: 'components/checks-create-dialog/template.html',
+  templateUrl: 'template.html',
   directives: [ CreateCheckDialogComponent ]
 })
 export class CreateCheckDialogComponent implements OnInit {

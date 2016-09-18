@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'settings-page',
-  templateUrl: 'components/settings-page/template.html'
+  templateUrl: 'template.html'
 })
 export class SettingsPageComponent {
 

@@ -1,3 +1,4 @@
+--ignore-dir=build
 --ignore-dir=client/typings
 --ignore-dir=dev
 --ignore-dir=dist

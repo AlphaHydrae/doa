@@ -7,8 +7,9 @@ import { AuthService } from '../../services/auth.service';
 import { Logger } from '../../services/log.service';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'login-dialog',
-  templateUrl: 'components/login-dialog/template.html',
+  templateUrl: 'template.html',
   directives: [ LoginDialogComponent ]
 })
 export class LoginDialogComponent implements OnInit {

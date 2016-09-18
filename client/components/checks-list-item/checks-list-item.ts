@@ -4,8 +4,10 @@ import * as moment from 'moment';
 import { ChecksService } from '../../services/checks.service';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: '[check-list-item]',
-  templateUrl: 'components/checks-list-item/checks-list-item.html',
+  styleUrls: [ 'checks-list-item.css' ],
+  templateUrl: 'checks-list-item.html',
   host: {
     '[class.list-group-item-info]': 'infoClass',
     '[class.list-group-item-danger]': 'dangerClass',

@@ -5,8 +5,9 @@ import { LoginDialogComponent } from '../login-dialog/component';
 import { SettingsService } from '../../services/settings.service';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'navbar',
-  templateUrl: 'components/navbar/template.html',
+  templateUrl: 'template.html',
   providers: [ LoginDialogComponent ],
   directives: [ LoginDialogComponent ]
 })

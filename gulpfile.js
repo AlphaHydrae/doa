@@ -60,13 +60,15 @@ var src = {
   fonts: { files: 'fonts/**/*', cwd: 'node_modules/bootstrap/dist' },
   index: { files: 'index.slm', cwd: 'client' },
   compiledIndex: function() { return { files: 'index.html', cwd: getBuildDir() }; },
-  templates: { files: [ '*/**/*.slm', 'app.template.slm' ], cwd: 'client' },
+  templates: { files: [ '**/*.slm', '!index.slm' ], cwd: 'client' },
   favicon: { files: 'client/favicon.ico' },
   less: { files: '**/*.less', cwd: 'client'  },
   rawJs: { files: '**/*.js', cwd: 'client' },
   styl: { files: '**/*.styl', cwd: 'client' },
   ts: { files: '**/*.ts', cwd: 'client' },
   tsConfig: { files: 'config/config.ts.hbs' },
+  prodStyl: { files: [ '**/*.styl', '!components/**/*', '!**/*.component.styl' ], cwd: 'client' },
+  prodComponentsStyl: { files: [ 'components/**/*.styl', '**/*.component.styl' ], cwd: 'client', base: 'client' },
   prodBuild: { files: '**/*', cwd: 'build/production' },
   prodMain: { files: 'tmp/production/assets/main.js' },
   prodJs: { files: 'tmp/production/bundle.js' }
@@ -75,7 +77,7 @@ var src = {
 var injections = {
   development: {
     js: [ 'build/development/assets/system.js' ],
-    css: { files: 'build/development/assets/**/*.css', compare: compareStylesheets }
+    css: { files: [ 'build/development/assets/**/*.css', '!build/development/assets/components/**/*', '!build/development/**/*.component.css' ], compare: compareStylesheets }
   },
   production: {
     js: [ 'build/production/assets/**/*.js' ],
@@ -188,7 +190,7 @@ gulp.task('dev:slm:templates', function() {
     .pipe(logBuildFiles('html'))
     .pipe(pipeSlm())
     .pipe(pipePrettifyHtml())
-    .pipe(toDevBuild());
+    .pipe(toDevBuild('assets'));
 });
 
 gulp.task('dev:slm:index', function() {
@@ -240,7 +242,7 @@ gulp.task('dev:watch:slm:templates', function() {
       .pipe(logBuildFiles('html'))
       .pipe(pipeSlm())
       .pipe(pipePrettifyHtml())
-      .pipe(toDevBuild());
+      .pipe(toDevBuild('assets'));
   });
 });
 
@@ -274,7 +276,7 @@ gulp.task('prod:css', [ 'prod:env' ], function() {
   var lessSrc = gulpifySrc(src.less)
     .pipe(pipeCompileLess());
 
-  var stylSrc = gulpifySrc(src.styl)
+  var stylSrc = gulpifySrc(src.prodStyl)
     .pipe(pipeCompileStylus());
 
   return merge(lessSrc, stylSrc)
@@ -378,27 +380,36 @@ gulp.task('prod:rev', [ 'prod:unreved' ], function() {
     .pipe(toBuild());
 });
 
-gulp.task('prod:slm:templates', [ 'prod:env' ], function() {
+gulp.task('prod:tmp:css', [ 'prod:env' ], function() {
+  return gulpifySrc(src.prodComponentsStyl)
+    .pipe(pipeCompileStylus())
+    .pipe(cssmin())
+    .pipe(gulp.dest(getTmpDir('assets')));
+});
+
+gulp.task('prod:tmp:templates', [ 'prod:env' ], function() {
   return gulpifySrc(src.templates)
     .pipe(pipeSlm())
     .pipe(logProductionFiles())
-    .pipe(gulp.dest(config.tmpDir));
+    .pipe(gulp.dest(getTmpDir('assets')));
 });
 
-gulp.task('prod:ts:config', sequence('prod:env', [ 'prod:slm:templates', 'ts:config' ]));
+gulp.task('prod:ts:config', sequence('prod:env', [ 'prod:tmp:css', 'prod:tmp:templates' ], 'ts:config'));
 
 gulp.task('prod:ts', [ 'prod:ts:config' ], function() {
   return gulpifySrc(src.ts)
+    .pipe(virtualMoveTs())
     .pipe(inlineTemplates({
       base: 'tmp/production',
       removeLineBreaks: true,
-      templateProcessor: minifyInlineTemplate
+      templateProcessor: minifyInlineTemplate,
+      useRelativePaths: true
     }))
     .pipe(pipeCompileTypescript())
     .pipe(gulp.dest(getTmpDir('assets')));
 });
 
-gulp.task('prod:unreved', [ 'prod:favicon', 'prod:fonts', 'prod:minify', 'prod:slm:templates' ]);
+gulp.task('prod:unreved', [ 'prod:favicon', 'prod:fonts', 'prod:minify' ]);
 
 gulp.task('prod:useref', [ 'prod:index' ], function() {
   return gulpifySrc(src.compiledIndex)
@@ -485,6 +496,21 @@ function pipePrettifyHtml() {
         indent_size: 2
       }));
   })();
+}
+
+function virtualMoveTs() {
+  return through.obj(function(file, enc, cb) {
+
+    var cwd = 'tmp/production/assets',
+        originalBase = file.base,
+        base = path.resolve(cwd) + '/';
+
+    file.cwd = cwd;
+    file.base = base;
+    file.path = path.join(base, path.relative(originalBase, file.path));
+
+    cb(null, file);
+  });
 }
 
 // Utility functions

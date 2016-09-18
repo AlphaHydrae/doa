@@ -11,6 +11,7 @@ import { Logger } from './services/log.service';
 import './rxjs';
 
 @Component({
+  moduleId: module.id.toString(),
   selector: 'app',
   templateUrl: 'app.template.html',
   providers: [ HomePageComponent, Logger, NavbarComponent ],
