@@ -1,6 +1,7 @@
 var _ = require('lodash'),
     compose = require('composable-middleware'),
     config = require('../../config'),
+    errors = require('./errors'),
     jwt = require('express-jwt'),
     p = require('bluebird'),
     User = require('../models/user');
@@ -31,7 +32,7 @@ exports.authorize = function(policy, options) {
     .use(exports.authenticate(options))
     .use(function(req, res, next) {
       p.resolve().then(_.partial(policy, req)).then(function(authorized) {
-        next(authorized ? undefined : new Error('You are not authorized to perform this action.'))
+        next(authorized ? undefined : new errors.ApiError('You are not authorized to perform this action.', 403))
       }).catch(next);
     });
 };
@@ -39,7 +40,7 @@ exports.authorize = function(policy, options) {
 function enrichRequest(req, res, next) {
   req.authenticated = function() {
     if (!req.user) {
-      throw new Error('Authentication required');
+      throw new errors.ApiError('Authentication required', 401);
     } else {
       return req.user;
     }

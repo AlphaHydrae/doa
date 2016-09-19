@@ -15,7 +15,8 @@ var config = {
     jwtSecret: process.env.DOA_SECRET || 'changeme',
     port: parseConfigInt(process.env.PORT) || 3000,
     buildDir: path.join(root, 'build', env),
-    tmpDir: path.join(root, 'tmp', env)
+    tmpDir: path.join(root, 'tmp', env),
+    logLevel: process.env.DOA_LOG_LEVEL || 'TRACE'
   },
 
   development: {
@@ -24,9 +25,11 @@ var config = {
 
   test: {
     db: process.env.DOA_MONGODB_URI || 'mongodb://localhost/doa-test',
+    logLevel: process.env.DOA_LOG_LEVEL || 'FATAL'
   },
 
   production: {
+    logLevel: process.env.DOA_LOG_LEVEL || 'WARN'
   }
 };
 
@@ -42,7 +45,9 @@ module.exports = _.extend(config.all, config[env], {
   },
 
   logger: function(name) {
-    return log4js.getLogger(name);
+    var logger = log4js.getLogger(name);
+    logger.setLevel(module.exports.logLevel);
+    return logger;
   }
 });
 

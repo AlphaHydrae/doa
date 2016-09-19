@@ -1,71 +1,49 @@
-var app = require('../../app'),
-    chai = require('chai'),
-    expect = chai.expect,
-    moment = require('moment'),
+var _ = require('../../../lib/lodash'),
+    expectations = require('../../spec/expectations'),
+    fixtures = require('../../spec/fixtures'),
     p = require('bluebird'),
-    supertest = require('supertest');
-
-var Check = require('../../models/check'),
-    User = require('../../models/user');
-
-chai.use(require('chai-moment'));
+    spec = require('../../spec/utils');
 
 describe('/api/users', function() {
   describe('POST', function() {
 
-    var admin,
-        now,
-        later;
+    var state,
+        data = {};
 
     beforeEach(function() {
-      return p.resolve().then(clearDatabase).then(createAdmin).then(function(record) {
-        admin = record;
-        now = moment();
-        later = moment().add(2, 'seconds');
+
+      data.user = {
+        email: 'user@example.com',
+        password: 'foobar'
+      };
+
+      return state = spec.setUp(function() {
+        return p.all([
+          fixtures.create('user'),
+          fixtures.create('admin')
+        ]);
       });
     });
 
+    it('should forbid access to a non-admin', spec.testCreateForbiddenFactory('/api/users', _.getter(data, 'user'), _.invoker(fixtures, 'get', 'user')));
+
     it('should create a user', function(done) {
-      supertest(app)
-        .post('/api/users')
-        .set('Authorization', 'Bearer ' + admin.jwt())
-        .send({
-          email: 'user@example.com',
-          password: 'foobar'
-        })
-        .expect(201)
-        .expect(function(res) {
+      spec
+        .testCreate('/api/users', data.user, fixtures.get('admin'))
+        .expect(expectations.user(_.extend(data.user, {
+            createdAfter: state.now
+        })))
+        .end(done);
+    });
 
-          var body = res.body;
-          expect(body).to.be.an('object');
-          expect(body).to.have.all.keys('id', 'email', 'role', 'createdAt', 'updatedAt');
-
-          expect(body.id).to.be.a('string');
-          expect(body.email).to.equal('user@example.com');
-          expect(body.password).to.equal(undefined);
-
-          expect(body.createdAt)
-            .to.be.afterMoment(now)
-            .and.be.beforeMoment(later);
-
-          expect(body.updatedAt).to.equal(body.createdAt);
-        })
+    it('should create an admin', function(done) {
+      data.user.role = 'admin';
+      spec
+        .testCreate('/api/users', data.user, fixtures.get('admin'))
+        .expect(expectations.user(_.extend(data.user, {
+            createdAfter: state.now
+        })))
         .end(done);
     });
   });
 });
-
-function clearDatabase() {
-  return p.all([
-    Check.remove({}),
-    User.remove({})
-  ]);
-}
-
-function createAdmin() {
-  return new User({
-    email: 'admin@example.com',
-    password: 'foobar',
-    role: 'admin'
-  }).save();
-}
