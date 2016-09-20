@@ -64,7 +64,8 @@ UserSchema.statics = {
 UserSchema.methods = {
   jwt: function() {
     return jwt.sign({
-      sub: this.apiId
+      sub: this.apiId,
+      iat: new Date().getTime()
     }, config.jwtSecret);
   },
 

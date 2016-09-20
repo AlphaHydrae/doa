@@ -7,4 +7,6 @@ stuff "gulp\012"
 screen -t vim 2
 stuff "\${PROJECT_EDITOR-\$EDITOR}\012"
 screen -t zsh 3
+screen -t test 4
+stuff "gulp test"
 select vim

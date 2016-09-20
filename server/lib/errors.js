@@ -6,8 +6,11 @@ var logger = config.logger('errors');
 exports.handler = function(res) {
   return function(err) {
 
-    var data = {};
+    var data = {},
+        status = err.status || 500;
+
     if (err.name == 'ValidationError') {
+      status = err.status || 422;
       data.errors = err.errors;
     } else {
       logger.warn(err);
@@ -19,7 +22,7 @@ exports.handler = function(res) {
       ];
     }
 
-    res.status(500).send(data);
+    res.status(status).send(data);
   };
 };
 

@@ -18,11 +18,36 @@ exports.testApp = function() {
   return supertest(app);
 };
 
+exports.testApi = function(method, path, data, headers) {
+
+  var request = exports
+    .testApp()[method.toLowerCase()](_.isFunction(path) ? path() : path);
+
+  if (data) {
+    request = request.send(_.isFunction(data) ? data() : data);
+  }
+
+  headers = _.isFunction(headers) ? headers() : headers;
+
+  if (headers instanceof User) {
+    headers = {
+      Authorization: 'Bearer ' + headers.jwt()
+    };
+  }
+
+  if (headers) {
+    _.each(headers, function(value, key) {
+      request = request.set(key, value);
+    });
+  }
+
+  return request;
+};
+
 exports.testCreate = function(path, data, user) {
 
-  var request = exports.testApp()
-    .post(path)
-    .send(data)
+  var request = exports
+    .testApi('POST', path, data)
     .expect(201);
 
   if (user) {
@@ -33,17 +58,11 @@ exports.testCreate = function(path, data, user) {
   return request;
 };
 
-exports.testCreateForbidden = function(path, data, user) {
+exports.testError = function(method, path, data, user, expectedStatus) {
 
-  var request = exports.testApp()
-    .post(path)
-    .send(_.isFunction(data) ? data() : data)
-    .expect(403);
-
-  if (user) {
-    user = _.isFunction(user) ? user() : user;
-    request = request.set('Authorization', 'Bearer ' + user.jwt());
-  }
+  var request = exports
+    .testApi(method, path, data, user)
+    .expect(expectedStatus);
 
   return request;
 };

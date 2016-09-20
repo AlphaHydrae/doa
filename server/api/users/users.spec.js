@@ -4,46 +4,57 @@ var _ = require('../../../lib/lodash'),
     p = require('bluebird'),
     spec = require('../../spec/utils');
 
-describe('/api/users', function() {
-  describe('POST', function() {
+describe('POST /api/users', function() {
 
-    var state,
-        data = {};
+  var state,
+      data = {};
 
-    beforeEach(function() {
+  beforeEach(function() {
 
-      data.user = {
-        email: 'user@example.com',
-        password: 'foobar'
-      };
+    data.user = {
+      email: 'user@example.com',
+      password: 'foobar'
+    };
 
-      return state = spec.setUp(function() {
-        return p.all([
-          fixtures.create('user'),
-          fixtures.create('admin')
-        ]);
-      });
-    });
-
-    it('should forbid access to a non-admin', spec.testCreateForbiddenFactory('/api/users', _.getter(data, 'user'), _.invoker(fixtures, 'get', 'user')));
-
-    it('should create a user', function(done) {
-      spec
-        .testCreate('/api/users', data.user, fixtures.get('admin'))
-        .expect(expectations.user(_.extend(data.user, {
-            createdAfter: state.now
-        })))
-        .end(done);
-    });
-
-    it('should create an admin', function(done) {
-      data.user.role = 'admin';
-      spec
-        .testCreate('/api/users', data.user, fixtures.get('admin'))
-        .expect(expectations.user(_.extend(data.user, {
-            createdAfter: state.now
-        })))
-        .end(done);
+    return state = spec.setUp(function() {
+      return p.all([
+        fixtures.create('user'),
+        fixtures.create('admin')
+      ]);
     });
   });
+
+  it('should create a user', function(done) {
+
+    var expected = _.extend(data.user, {
+      createdAfter: state.now
+    });
+
+    spec
+      .testCreate('/api/users', data.user, fixtures.get('admin'))
+      .expect(expectations.userFactory(expected))
+      .end(done);
+  });
+
+  it('should create an admin', function(done) {
+
+    data.user.role = 'admin';
+
+    var expected = _.extend(data.user, {
+      createdAfter: state.now
+    });
+
+    spec
+      .testCreate('/api/users', data.user, fixtures.get('admin'))
+      .expect(expectations.userFactory(expected))
+      .end(done);
+  });
+
+  // Validations
+  it('should not create a blank user', spec.testErrorFactory('POST', '/api/users', {}, _.invoker(fixtures, 'get', 'admin'), 422));
+  it('should not create an invalid user', spec.testErrorFactory('POST', '/api/users', { email: 'user-1@example.com', password: '123' }, _.invoker(fixtures, 'get', 'admin'), 422));
+
+  // Authorization
+  it('should deny access to an anonymous user', spec.testErrorFactory('POST', '/api/users', _.getter(data, 'user'), null, 401));
+  it('should deny access to a non-admin', spec.testErrorFactory('POST', '/api/users', _.getter(data, 'user'), _.invoker(fixtures, 'get', 'user'), 403));
 });
