@@ -16,17 +16,17 @@ router.get('/',
 
 router.get('/:id',
   controller.fetchRecord(),
-  authorize(policy.retrieve),
+  authorize(policy.retrieve, true),
   controller.retrieve);
 
 router.post('/:id/ping',
   controller.fetchRecord(),
-  authorize(policy.ping),
+  authorize(policy.ping, true),
   controller.ping);
 
 router.delete('/:id',
   controller.fetchRecord(),
-  authorize(policy.destroy),
+  authorize(policy.destroy, true),
   controller.destroy);
 
 module.exports = router;

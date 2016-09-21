@@ -26,6 +26,10 @@ exports.handler = function(res) {
   };
 };
 
+exports.catch404 = function(req, res, next) {
+  next(new NotFoundError());
+};
+
 function ApiError(message, status) {
   Error.captureStackTrace(this, this.constructor);
   this.name = this.constructor.name;
@@ -36,3 +40,14 @@ function ApiError(message, status) {
 util.inherits(ApiError, Error);
 
 exports.ApiError = ApiError;
+
+function NotFoundError(message) {
+  Error.captureStackTrace(this, this.constructor);
+  this.name = this.constructor.name;
+  this.message = message || 'Not Found';
+  this.status = 404;
+}
+
+util.inherits(NotFoundError, Error);
+
+exports.NotFoundError = NotFoundError;

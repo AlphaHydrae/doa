@@ -1,5 +1,6 @@
 var _ = require('lodash'),
     bodyParser = require('body-parser'),
+    errors = require('./lib/errors'),
     express = require('express'),
     favicon = require('serve-favicon'),
     log4js = require('log4js'),
@@ -96,11 +97,7 @@ router.get('/*', serveIndex);
 app.use('/', router);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+app.use(errors.catch404);
 
 // error handlers
 

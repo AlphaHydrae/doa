@@ -51,9 +51,12 @@ describe('GET /api/checks/:id', function() {
 
   beforeEach(function() {
     return state = spec.setUp(function() {
-      return fixtures.create('user').then(function(user) {
+      return p.all([
+        fixtures.create('user'),
+        fixtures.create('admin')
+      ]).then(function() {
         return fixtures.create('check', {
-          user: user
+          user: fixtures.get('user')
         });
       }).then(function(record) {
         check = record;
@@ -63,10 +66,30 @@ describe('GET /api/checks/:id', function() {
 
   it('should retrieve a check', function(done) {
     spec
-      .testApi('GET', '/api/checks/' + check.apiId, null, fixtures.get('user'))
+      .testApi('GET', '/api/checks/' + fixtures.get('check').apiId, null, fixtures.get('user'))
+      .expect(200)
       .expect(expectations.checkFactory(fixtures.get('check')))
       .end(done);
   });
+
+  it('should allow an admin to retrieve a check belonging to another user', function(done) {
+    spec
+      .testApi('GET', '/api/checks/' + fixtures.get('check').apiId, null, fixtures.get('admin'))
+      .expect(200)
+      .expect(expectations.checkFactory(fixtures.get('check')))
+      .end(done);
+  });
+
+  it('should not allow a user to retrieve a check belonging to another user', function(done) {
+    fixtures.create('another-user', 'user').then(function() {
+      spec
+        .testApi('GET', '/api/checks/' + fixtures.get('check').apiId, null, fixtures.get('another-user'))
+        .expect(404)
+        .end(done);
+    }).catch(done);
+  });
+
+  it('should not retrieve a check that does not exist', spec.testErrorFactory('GET', '/api/checks/0', null, _.invoker(fixtures, 'get', 'user'), 404));
 
   // Authorization
   it('should deny access to an anonymous user', spec.testErrorFactory('GET', function() { return '/api/checks/' + fixtures.get('check').apiId; }, null, null, 401));

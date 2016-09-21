@@ -52,7 +52,7 @@ policy(model, {
   },
 
   retrieve: function(req) {
-    return req.authenticated();
+    return req.authenticated() && (req.user.hasRole('admin') || (req.user._id.equals(req.record.user) || req.user._id.equals(req.record.user._id)));
   },
 
   ping: function(req) {
@@ -66,6 +66,6 @@ policy(model, {
   scope: function(req, options) {
     options = _.extend({}, options);
     var query = options.query || this.find();
-    return req.user ? query : query.where({ _id: null });
+    return req.user ? query.where('user', req.user._id) : query.where({ _id: null });
   }
 });

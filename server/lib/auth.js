@@ -22,17 +22,26 @@ exports.authenticate = function(options) {
     .use(loadAuthenticatedUser(options.required));
 };
 
-exports.authorize = function(policy, options) {
+exports.authorize = function(policy, identifiedResource, options) {
+  if (_.isObject(identifiedResource)) {
+    options = identifiedResource;
+    identifiedResource = false;
+  }
 
   options = _.defaults({}, options, {
-    required: false
+    required: false,
+    identifiedResource: identifiedResource
   });
 
   return compose()
     .use(exports.authenticate(options))
     .use(function(req, res, next) {
       p.resolve().then(_.partial(policy, req)).then(function(authorized) {
-        next(authorized ? undefined : new errors.ApiError('You are not authorized to perform this action.', 403))
+        if (authorized) {
+          next();
+        } else {
+          next(options.identifiedResource ? new errors.NotFoundError() : new errors.ApiError('You are not authorized to perform this action.', 403))
+        }
       }).catch(next);
     });
 };
